@@ -128,8 +128,15 @@ h6 {
 
 #dashboard-header h1 {
   font-size: 2rem;
-  border-bottom: var(--border-thick);
   padding-bottom: 0.5rem;
+}
+
+.logo-header {
+  max-width: 100%;
+  height: auto;
+  max-height: 120px;
+  display: block;
+  margin-bottom: 1rem;
 }
 
 .counter-brutal {
