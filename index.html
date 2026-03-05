@@ -47,10 +47,7 @@
         <div class="counter-brutal" id="progress-counter">0 / 0 Terminées</div>
       </div>
 
-      <div
-        class="filters-container"
-        style="display: flex; gap: 1rem; flex-wrap: wrap"
-      >
+      <div class="filters-container" style="display: flex; gap: 1rem; flex-wrap: wrap">
         <select id="filter-referent" class="select-brutal">
           <option value="ALL">Tous les référents</option>
           <!-- Loaded dynamically -->
@@ -60,18 +57,19 @@
           <option value="INCOMPLETE">À faire</option>
           <option value="COMPLETED">Terminées</option>
         </select>
-        <button
-          id="btn-open-add-mission"
-          class="btn-brutal"
-          style="margin-left: auto"
-        >
-          + Nouvelle Mission
-        </button>
       </div>
 
       <div id="missions-container">
         <!-- Missions Cards will be injected here -->
       </div>
+
+      <button
+        id="btn-open-add-mission"
+        class="btn-fab"
+        title="Nouvelle Mission"
+      >
+        +
+      </button>
     </div>
 
     <!-- ADD TASK MODAL -->
