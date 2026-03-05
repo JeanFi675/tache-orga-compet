@@ -485,7 +485,7 @@ async function handleCreateTask() {
     }
   }
   
-  btnSaveTask.textContent = "Ajouter";
+  btnSaveTask.textContent = isEditing ? "Enregistrer" : "Ajouter";
   btnSaveTask.disabled = false;
 }
 

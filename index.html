@@ -78,22 +78,32 @@
     <div id="add-task-modal" class="brutal-modal hidden">
       <div class="brutal-modal-content">
         <h2 id="task-modal-title">Nouvelle Tâche</h2>
-        <input
-          type="text"
-          id="new-task-title"
-          class="input-brutal"
-          placeholder="Titre de la tâche"
-        />
-        <select
-          id="new-task-referent-id"
-          class="select-brutal"
-          style="margin-top: 1rem; width: 100%"
-        >
-          <option value="">Non assigné</option>
-          <!-- Loaded dynamically -->
-        </select>
+        
+        <div>
+          <label for="new-task-title" style="display: block; font-weight: bold; margin-bottom: 0.2rem;">Titre de la tâche</label>
+          <input
+            type="text"
+            id="new-task-title"
+            class="input-brutal"
+            placeholder="Ex: Acheter du pain"
+          />
+        </div>
+
+        <div>
+          <label for="new-task-referent-id" style="display: block; font-weight: bold; margin-bottom: 0.2rem;">Référent assigné</label>
+          <select
+            id="new-task-referent-id"
+            class="select-brutal"
+            style="width: 100%"
+          >
+            <option value="">Non assigné</option>
+            <!-- Loaded dynamically -->
+          </select>
+        </div>
+
         <input type="hidden" id="new-task-mission-id" />
-        <div style="display: flex; gap: 1rem; margin-top: 1rem">
+        
+        <div style="display: flex; gap: 1rem;">
           <button id="btn-save-task" class="btn-brutal" style="flex: 1">
             Ajouter
           </button>
