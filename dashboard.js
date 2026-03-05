@@ -214,9 +214,9 @@ function renderDashboard() {
             <div class="task-title" contenteditable="true" spellcheck="false" data-id="${t.Id}" style="outline: none;">${t.titre}</div>
             ${taskRefName ? `<div class="task-assignee">📍 ${taskRefName}</div>` : ''}
           </div>
-          <div class="task-actions" style="display: flex; gap: 0.5rem;">
-            <button class="btn-action task-edit" data-id="${t.Id}" title="Modifier la tâche">✏️</button>
-            <button class="btn-delete task-delete" data-id="${t.Id}" title="Supprimer la tâche">🗑️</button>
+          <div class="task-actions">
+            <button class="btn-icon task-edit" data-id="${t.Id}" title="Modifier la tâche">✏️</button>
+            <button class="btn-icon task-delete" data-id="${t.Id}" title="Supprimer la tâche">🗑️</button>
           </div>
         </li>
       `;
@@ -224,17 +224,25 @@ function renderDashboard() {
 
     card.innerHTML = `
       <div class="mission-header">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none; flex: 1;">${mission.titre || 'Sans titre'}</h2>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-action mission-edit" data-id="${mission.Id}" title="Modifier la mission">✏️</button>
-            <button class="btn-delete mission-delete" data-id="${mission.Id}" title="Supprimer la mission">🗑️</button>
+        <div class="mission-top-bar">
+          <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none;">${mission.titre || 'Sans titre'}</h2>
+          <div class="mission-actions">
+            <button class="btn-icon mission-edit" data-id="${mission.Id}" title="Modifier la mission">✏️</button>
+            <button class="btn-icon mission-delete" data-id="${mission.Id}" title="Supprimer la mission">🗑️</button>
           </div>
         </div>
-        <div class="mission-meta" style="margin-top: 0.5rem;">
-          <span class="brutal-tag">${displayDate}</span>
-          ${assignees.map(a => `<span class="brutal-tag" style="background:#fff">${a}</span>`).join('')}
-          <button class="btn-action edit-mission-assignees" data-id="${mission.Id}">Gérer l'équipe</button>
+        <div class="mission-info-grid">
+          <div class="info-item">
+            <span class="info-label">📅 Date</span>
+            <span class="info-value">${displayDate}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">👥 Équipe</span>
+            <div class="info-value team-list">
+              ${assignees.map(a => `<span class="team-badge">${a}</span>`).join('')}
+              <button class="btn-manage-team edit-mission-assignees" data-id="${mission.Id}">Modifier</button>
+            </div>
+          </div>
         </div>
       </div>
       <ul class="task-list">
