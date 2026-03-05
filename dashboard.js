@@ -48,6 +48,11 @@ export async function initDashboard() {
       fetchReferents()
     ]);
 
+    // Trier les référents par ordre alphabétique
+    if (referentsData) {
+      referentsData.sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
+    }
+
     // 2. Fetch tasks for all missions (can be optimized but simple for now)
     const taskPromises = missionsData.map(m => fetchTaches(m.Id));
     const tasksResults = await Promise.all(taskPromises);
@@ -167,7 +172,7 @@ function getMissionAssigneesNames(referentIds) {
   }
   if (referentIds.length === 0) return ["Non assigné"];
   
-  return referentIds.map(ptr => {
+  const names = referentIds.map(ptr => {
     // Si c'est juste un ID (String ou Number)
     if (typeof ptr !== 'object') {
       const ref = referentsData.find(r => r.Id == ptr || r.id == ptr);
@@ -184,6 +189,8 @@ function getMissionAssigneesNames(referentIds) {
     const ref = referentsData.find(r => r.Id == actualId || r.id == actualId);
     return ref ? ref.nom : (actualId ? "Inconnu (" + actualId + ")" : "Inconnu");
   });
+
+  return names.sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
 }
 
 function renderDashboard() {
@@ -677,6 +684,7 @@ async function handleAddReferent() {
   const newRef = await createReferent(nom);
   if (newRef) {
     referentsData.push(newRef);
+    referentsData.sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
     inputNewReferentName.value = '';
     populateReferentFilter();
     // Refresh the list in the currently open modal
@@ -743,6 +751,7 @@ function openAssignMissionModal(missionId) {
         const success = await updateReferent(ref.Id, newNom.trim());
         if (success) {
           ref.nom = newNom.trim();
+          referentsData.sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
           populateReferentFilter();
           renderDashboard();
           openAssignMissionModal(missionId);
