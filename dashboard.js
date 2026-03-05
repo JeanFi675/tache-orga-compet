@@ -1,4 +1,4 @@
-import { fetchMissions, fetchTaches, fetchReferents, updateTache, updateMission, createTache, deleteTache, createMission, deleteMission, linkReferentToMission, unlinkReferentFromMission } from './api.js';
+import { fetchMissions, fetchTaches, fetchReferents, updateTache, updateMission, createTache, deleteTache, createMission, deleteMission, linkReferentToMission, unlinkReferentFromMission, createReferent, deleteReferent } from './api.js';
 
 let missionsData = [];
 let tachesData = [];
@@ -35,6 +35,8 @@ const assignMissionModal = document.getElementById('assign-mission-modal');
 const assignMissionList = document.getElementById('assign-mission-list');
 const inputAssignMissionId = document.getElementById('assign-mission-id');
 const btnCloseAssignMission = document.getElementById('btn-close-assign-mission');
+const inputNewReferentName = document.getElementById('new-referent-name');
+const btnAddReferent = document.getElementById('btn-add-referent');
 
 export async function initDashboard() {
   container.innerHTML = '<p style="font-size: 1.5rem; font-weight: bold; animation: blink 1s infinite alternate;">Chargement brutal...</p>';
@@ -80,6 +82,8 @@ export async function initDashboard() {
 
     btnCloseAssignMission.addEventListener('click', () => assignMissionModal.classList.add('hidden'));
 
+    btnAddReferent.addEventListener('click', handleAddReferent);
+
   } catch (err) {
     container.innerHTML = '<p style="color:red; font-size:1.5rem; border:4px solid black; padding:1rem; background:white;">Erreur de connexion API.</p>';
     console.error(err);
@@ -87,6 +91,10 @@ export async function initDashboard() {
 }
 
 function populateReferentFilter() {
+  // Clear current options first (except the first one)
+  while (filterReferent.options.length > 1) filterReferent.remove(1);
+  while (inputTaskReferentId.options.length > 1) inputTaskReferentId.remove(1);
+
   referentsData.forEach(ref => {
     const opt = document.createElement('option');
     opt.value = ref.Id;
@@ -556,9 +564,33 @@ async function handleCreateMission() {
   btnSaveMission.disabled = false;
 }
 
+async function handleAddReferent() {
+  const nom = inputNewReferentName.value.trim();
+  if (!nom) return;
+
+  btnAddReferent.disabled = true;
+  btnAddReferent.textContent = "...";
+
+  const newRef = await createReferent(nom);
+  if (newRef) {
+    referentsData.push(newRef);
+    inputNewReferentName.value = '';
+    populateReferentFilter();
+    // Refresh the list in the currently open modal
+    openAssignMissionModal(inputAssignMissionId.value);
+  } else {
+    alert("Erreur lors de la création du référent");
+  }
+
+  btnAddReferent.disabled = false;
+  btnAddReferent.textContent = "Ajouter";
+}
+
 function openAssignMissionModal(missionId) {
   inputAssignMissionId.value = missionId;
   const mission = missionsData.find(m => m.Id == missionId);
+  if (!mission) return;
+  
   const assignedIds = Array.isArray(mission.Referents_Assignes) ? mission.Referents_Assignes.map(r => r.Id) : [];
   
   assignMissionList.innerHTML = '';
@@ -567,13 +599,18 @@ function openAssignMissionModal(missionId) {
     const isAssigned = assignedIds.includes(ref.Id);
     const div = document.createElement('div');
     div.style.marginBottom = '0.5rem';
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.justifyContent = 'space-between';
     div.innerHTML = `
-      <label class="brutal-checkbox-container" style="font-size: 1.1rem;">
+      <label class="brutal-checkbox-container" style="font-size: 1.1rem; flex: 1;">
         <input type="checkbox" class="assignee-checkbox" value="${ref.Id}" ${isAssigned ? 'checked' : ''}>
         <span class="checkmark" style="height:20px; width:20px;"></span>
         <span style="margin-left: 0.5rem;">${ref.nom}</span>
       </label>
+      <button class="btn-icon delete-referent" data-id="${ref.Id}" title="Supprimer ce référent" style="margin-left: 0.5rem; opacity: 0.6; padding: 0.2rem;">🗑️</button>
     `;
+
     const cb = div.querySelector('input');
     cb.addEventListener('change', async (e) => {
       progressCounter.innerText = 'Mise à jour...';
@@ -592,6 +629,28 @@ function openAssignMissionModal(missionId) {
       }
       renderDashboard(); // Re-render to update badges
     });
+
+    const btnDel = div.querySelector('.delete-referent');
+    btnDel.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm(`Supprimer définitivement le référent "${ref.nom}" ?`)) return;
+      
+      progressCounter.innerText = 'Suppression...';
+      const success = await deleteReferent(ref.Id);
+      if (success) {
+        referentsData = referentsData.filter(r => r.Id != ref.Id);
+        // Clean up assignment if it was assigned to this mission
+        if (Array.isArray(mission.Referents_Assignes)) {
+          mission.Referents_Assignes = mission.Referents_Assignes.filter(r => r.Id != ref.Id);
+        }
+        populateReferentFilter();
+        renderDashboard();
+        openAssignMissionModal(missionId);
+      } else {
+        alert("Erreur lors de la suppression");
+      }
+    });
+
     assignMissionList.appendChild(div);
   });
   

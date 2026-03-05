@@ -263,3 +263,44 @@ export async function unlinkReferentFromMission(missionId, referentId) {
     return false;
   }
 }
+/**
+ * Crée un nouveau référent
+ */
+export async function createReferent(nom) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_REFERENTS}/records`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify([{ nom }])
+    });
+    if (!res.ok) throw new Error("Erreur lors de la création du référent");
+    const data = await res.json();
+    const createdRef = data[0];
+    // Augmenter l'objet car NocoDB peut ne renvoyer que l'Id
+    createdRef.nom = createdRef.nom || nom;
+    return createdRef;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+/**
+ * Supprime un référent
+ */
+export async function deleteReferent(referentId) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_REFERENTS}/records`;
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify([{ Id: referentId }])
+    });
+    if (!res.ok) throw new Error("Erreur lors de la suppression du référent");
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
