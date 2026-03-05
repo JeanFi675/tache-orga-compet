@@ -93,6 +93,25 @@ export async function updateTache(tacheId, updates) {
 }
 
 /**
+ * Met à jour plusieurs tâches en une seule requête (ex: pour l'ordre)
+ * @param {Array} updates Tableau d'objets contenant au minimum l'Id de la tâche et les champs à modifier
+ */
+export async function bulkUpdateTaches(updates) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_TACHES}/records`;
+  try {
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(updates)
+    });
+    if (!res.ok) throw new Error("Erreur lors de la mise à jour en masse des tâches");
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * Met à jour une mission (titre, etc.)
  */
 export async function updateMission(missionId, updates) {

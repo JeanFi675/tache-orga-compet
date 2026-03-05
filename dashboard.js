@@ -1,4 +1,4 @@
-import { fetchMissions, fetchTaches, fetchReferents, updateTache, updateMission, createTache, deleteTache, createMission, deleteMission, linkReferentToMission, unlinkReferentFromMission, createReferent, deleteReferent, updateReferent, fetchMissionReferents } from './api.js';
+import { fetchMissions, fetchTaches, fetchReferents, updateTache, updateMission, createTache, deleteTache, createMission, deleteMission, linkReferentToMission, unlinkReferentFromMission, createReferent, deleteReferent, updateReferent, fetchMissionReferents, bulkUpdateTaches } from './api.js';
 
 let missionsData = [];
 let tachesData = [];
@@ -253,6 +253,13 @@ function renderDashboard() {
       return;
     }
 
+    // Sort tasks by 'ordre'
+    mTasks.sort((a, b) => {
+      const orderA = (a.ordre === null || a.ordre === undefined) ? Infinity : a.ordre;
+      const orderB = (b.ordre === null || b.ordre === undefined) ? Infinity : b.ordre;
+      return orderA - orderB;
+    });
+
     // Count statistics for the counter
     totalTasks += relevantTasks.length;
     completedTasks += relevantTasks.filter(t => t.est_terminee === true).length;
@@ -353,6 +360,47 @@ function renderDashboard() {
   // Update Global Counter
   progressCounter.innerText = `${completedTasks} / ${totalTasks} Terminées`;
   
+  // Attach SortableJS to each task list
+  document.querySelectorAll('.task-list').forEach(taskList => {
+    new Sortable(taskList, {
+      animation: 150,
+      delay: 300,            // 300ms de clic long avant d'activer le drag-and-drop
+      delayOnTouchOnly: true, // S'applique principalement sur mobile pour ne pas bloquer le scroll
+      ghostClass: "sortable-ghost", // Classe style lors du déplacement
+      onEnd: async function (evt) {
+        if (evt.oldIndex === evt.newIndex) return; // Pas de déplacement
+
+        const parentList = evt.to;
+        const taskItems = Array.from(parentList.querySelectorAll('.task-item'));
+        
+        let updates = [];
+        // On recupère le nouvel ordre du DOM
+        taskItems.forEach((item, index) => {
+          const taskId = item.dataset.id;
+          const taskObj = tachesData.find(t => t.Id == taskId);
+          // Si l'ordre a changé localement (ou n'existait pas)
+          if (taskObj && taskObj.ordre !== index) {
+            taskObj.ordre = index;
+            updates.push({ Id: taskId, ordre: index });
+          }
+        });
+
+        if (updates.length > 0) {
+          progressCounter.innerText = 'Sauvegarde en cours...';
+          const success = await bulkUpdateTaches(updates);
+          if (success) {
+            // Re-render pour s'assurer que l'état local correspond parfaitement
+            renderDashboard();
+          } else {
+            progressCounter.innerText = 'Erreur lors de la sauvegarde';
+            alert("Erreur réseau lors du changement d'ordre.");
+            renderDashboard(); // Revenir à l'ancien état
+          }
+        }
+      }
+    });
+  });
+
   // Attach Task Checkbox Events
   document.querySelectorAll('.task-checkbox').forEach(cb => {
     cb.addEventListener('change', async (e) => {
