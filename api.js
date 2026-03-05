@@ -42,9 +42,10 @@ export async function fetchTaches(missionId) {
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error("Erreur lors de la récupération des tâches");
     const data = await res.json();
+    console.log(`[fetchTaches] ${data.list.length} tâches récupérées pour missionId=${missionId}`);
     return data.list;
   } catch (error) {
-    console.error(error);
+    console.error(`[fetchTaches] Erreur pour missionId=${missionId}:`, error);
     return [];
   }
 }
@@ -204,22 +205,57 @@ export async function createMission(titre, date_debut, date_fin) {
 }
 
 /**
- * Supprime une mission
+ * Supprime une mission et toutes ses tâches rattachées
  */
 export async function deleteMission(missionId) {
-  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records`;
+  const id = parseInt(missionId);
+  console.log(`[deleteMission] Début suppression mission ${id}`);
+  
   try {
+    // 1. Récupérer les tâches rattachées
+    const tasks = await fetchTaches(id);
+    console.log(`[deleteMission] ${tasks.length} tâches trouvées pour la mission ${id}`);
+    
+    // 2. Si des tâches existent, les supprimer en bloc
+    if (tasks && tasks.length > 0) {
+      const taskDeleteUrl = `${NOCODB_URL}/api/v2/tables/${TABLE_TACHES}/records`;
+      const taskBody = tasks.map(t => ({ Id: t.Id }));
+      
+      console.log(`[deleteMission] Suppression en bloc des tâches:`, taskBody);
+      const taskRes = await fetch(taskDeleteUrl, {
+        method: 'DELETE',
+        headers,
+        body: JSON.stringify(taskBody)
+      });
+      
+      if (!taskRes.ok) {
+        const errText = await taskRes.text();
+        console.warn(`[deleteMission] Erreur lors de la suppression des tâches: ${errText}`);
+      } else {
+        console.log(`[deleteMission] Tâches supprimées avec succès`);
+      }
+    }
+
+    // 3. Supprimer la mission
+    console.log(`[deleteMission] Suppression de la mission ${id} elle-même`);
+    const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records`;
     const res = await fetch(url, {
       method: 'DELETE',
       headers,
       body: JSON.stringify([
-        { Id: missionId }
+        { Id: id }
       ])
     });
-    if (!res.ok) throw new Error("Erreur lors de la suppression de la mission");
+    
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Erreur lors de la suppression de la mission: ${errText}`);
+    }
+    
+    console.log(`[deleteMission] Mission ${id} supprimée avec succès`);
     return true;
   } catch (error) {
-    console.error(error);
+    console.error(`[deleteMission] Erreur fatale:`, error);
     return false;
   }
 }

@@ -421,8 +421,9 @@ function renderDashboard() {
       progressCounter.innerText = 'Suppression...';
       const success = await deleteMission(missionId);
       if(success) {
-        missionsData = missionsData.filter(m => m.Id != missionId);
-        tachesData = tachesData.filter(t => t.missions_id != missionId);
+        const idInt = parseInt(missionId);
+        missionsData = missionsData.filter(m => m.Id != idInt);
+        tachesData = tachesData.filter(t => t.missions_id != idInt);
         populateDateFilter();
         renderDashboard();
       } else {
