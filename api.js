@@ -21,7 +21,8 @@ export async function fetchMissions(archived = false) {
   // On récupère les missions filtrées par statut d'archivage
   const where = `(est_archivee,${archived ? 'checked' : 'notchecked'})`;
   // On utilise nested[Referents_Assignes][all]=true pour récupérer les objets référents complets au lieu du simple compteur
-  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records?sort=date_debut&where=${where}&limit=100&nested[Referents_Assignes][all]=true`;
+  // On essaye de forcer le nesting sur l'ID technique du lien (cj4bl5l73xtl2t3) au cas où le titre ne fonctionnerait pas
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records?sort=date_debut&where=${where}&limit=100&nested[Referents_Assignes][all]=true&nested[cj4bl5l73xtl2t3][all]=true`;
   try {
     const res = await fetch(url, { headers, cache: "no-store" });
     if (!res.ok) throw new Error("Erreur lors de la récupération des missions");
@@ -261,6 +262,21 @@ export async function deleteMission(missionId) {
 }
 
 /**
+ * Récupère les référents assignés à une mission spécifique via la table de liaison
+ */
+export async function fetchMissionReferents(missionId) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/links/cj4bl5l73xtl2t3/records/${missionId}?limit=100`;
+  try {
+    const res = await fetch(url, { headers, cache: "no-store" });
+    if (!res.ok) throw new Error("Erreur lors de la récupération des référents de la mission");
+    const data = await res.json();
+    return data.list; // Retourne la liste des objets (ou IDs) liés
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
  * Lie un référent à une mission
  */
 export async function linkReferentToMission(missionId, referentId) {
@@ -339,6 +355,23 @@ export async function deleteReferent(referentId) {
     return true;
   } catch (error) {
 
+    return false;
+  }
+}
+/**
+ * Met à jour le nom d'un référent
+ */
+export async function updateReferent(referentId, nom) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_REFERENTS}/records`;
+  try {
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify([{ Id: referentId, nom }])
+    });
+    if (!res.ok) throw new Error("Erreur lors de la mise à jour du référent");
+    return true;
+  } catch (error) {
     return false;
   }
 }

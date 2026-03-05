@@ -1,4 +1,4 @@
-import { fetchMissions, fetchTaches, fetchReferents, updateTache, updateMission, createTache, deleteTache, createMission, deleteMission, linkReferentToMission, unlinkReferentFromMission, createReferent, deleteReferent } from './api.js';
+import { fetchMissions, fetchTaches, fetchReferents, updateTache, updateMission, createTache, deleteTache, createMission, deleteMission, linkReferentToMission, unlinkReferentFromMission, createReferent, deleteReferent, updateReferent, fetchMissionReferents } from './api.js';
 
 let missionsData = [];
 let tachesData = [];
@@ -53,11 +53,23 @@ export async function initDashboard() {
     const tasksResults = await Promise.all(taskPromises);
     tachesData = tasksResults.flat();
 
-    // 3. Populate Referees & Dates Filters
+    // 3. Fetch referents implicitly linked to each mission (NocoDB v2 workaround)
+    const missionRefPromises = missionsData.map(async (m) => {
+      // Fetch explicit relationships
+      const linkedRefs = await fetchMissionReferents(m.Id);
+      // Replace the integer count with the actual array of IDs/Objects
+      m.Referents_Assignes = linkedRefs || [];
+      return linkedRefs;
+    });
+    await Promise.all(missionRefPromises);
+
+    // 4. Populate Referees & Dates Filters
     populateReferentFilter();
     populateDateFilter();
 
-    // 4. Render
+    // 5. Render
+    console.log("Debug Missions Data:", missionsData);
+    console.log("Debug Referents Data:", referentsData);
     renderDashboard();
 
     // 5. Attach Filter Events
@@ -142,15 +154,35 @@ function populateDateFilter() {
 function getTaskAssigneeName(referentIds) {
   if (!Array.isArray(referentIds) || referentIds.length === 0) return null;
   // Get first assignee
-  const ref = referentsData.find(r => r.Id === referentIds[0].Id);
+  const ref = referentsData.find(r => r.Id == referentIds[0].Id);
   return ref ? ref.nom : null;
 }
 
 function getMissionAssigneesNames(referentIds) {
-  if (!Array.isArray(referentIds) || referentIds.length === 0) return ["Non assigné"];
-  return referentIds.map(idObj => {
-    const ref = referentsData.find(r => r.Id === idObj.Id);
-    return ref ? ref.nom : "Inconnu";
+  // Debug si besoin
+  // console.log("getMissionAssigneesNames input:", referentIds);
+
+  if (!Array.isArray(referentIds)) {
+    return ["Non assigné"];
+  }
+  if (referentIds.length === 0) return ["Non assigné"];
+  
+  return referentIds.map(ptr => {
+    // Si c'est juste un ID (String ou Number)
+    if (typeof ptr !== 'object') {
+      const ref = referentsData.find(r => r.Id == ptr || r.id == ptr);
+      return ref ? ref.nom : "Inconnu (" + ptr + ")";
+    }
+
+    // Si c'est un objet (cas standard du nesting)
+    const actualId = ptr.Id || ptr.id;
+    
+    // Si l'objet imbriqué a déjà le nom, on l'utilise
+    if (ptr.nom) return ptr.nom;
+    
+    // Sinon on cherche dans referentsData chargé globalement
+    const ref = referentsData.find(r => r.Id == actualId || r.id == actualId);
+    return ref ? ref.nom : (actualId ? "Inconnu (" + actualId + ")" : "Inconnu");
   });
 }
 
@@ -257,7 +289,7 @@ function renderDashboard() {
       const completedClass = t.est_terminee ? 'completed' : '';
       
       // Get assigneee using the new foreign key
-      const ref = referentsData.find(r => r.Id === t.referents_id);
+      const ref = referentsData.find(r => r.Id == t.referents_id);
       const taskRefName = ref ? ref.nom : null;
       
       return `
@@ -679,6 +711,7 @@ function openAssignMissionModal(missionId) {
         <span class="checkmark" style="height:20px; width:20px;"></span>
         <span style="margin-left: 0.5rem;">${ref.nom}</span>
       </label>
+      <button class="btn-icon edit-referent" data-id="${ref.Id}" title="Modifier ce référent" style="margin-left: 0.5rem; opacity: 0.6; padding: 0.2rem;">✏️</button>
       <button class="btn-icon delete-referent" data-id="${ref.Id}" title="Supprimer ce référent" style="margin-left: 0.5rem; opacity: 0.6; padding: 0.2rem;">🗑️</button>
     `;
 
@@ -699,6 +732,24 @@ function openAssignMissionModal(missionId) {
         }
       }
       renderDashboard(); // Re-render to update badges
+    });
+
+    const btnEdit = div.querySelector('.edit-referent');
+    btnEdit.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const newNom = prompt(`Modifier le nom du référent :`, ref.nom);
+      if (newNom && newNom.trim() !== "" && newNom !== ref.nom) {
+        progressCounter.innerText = 'Mise à jour...';
+        const success = await updateReferent(ref.Id, newNom.trim());
+        if (success) {
+          ref.nom = newNom.trim();
+          populateReferentFilter();
+          renderDashboard();
+          openAssignMissionModal(missionId);
+        } else {
+          alert("Erreur lors de la modification");
+        }
+      }
     });
 
     const btnDel = div.querySelector('.delete-referent');
