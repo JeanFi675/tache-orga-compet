@@ -47,15 +47,19 @@
         <div class="counter-brutal" id="progress-counter">0 / 0 Terminées</div>
       </div>
 
-      <div class="filters-container" style="display: flex; gap: 1rem; flex-wrap: wrap">
+      <div class="filters-container">
         <select id="filter-referent" class="select-brutal">
-          <option value="ALL">Tous les référents</option>
+          <option value="ALL">Référent</option>
           <!-- Loaded dynamically -->
         </select>
         <select id="filter-status" class="select-brutal">
-          <option value="ALL">Tous les statuts</option>
+          <option value="ALL">Statut</option>
           <option value="INCOMPLETE">À faire</option>
           <option value="COMPLETED">Terminées</option>
+        </select>
+        <select id="filter-date" class="select-brutal">
+          <option value="">Date / Heure</option>
+          <!-- Loaded dynamically -->
         </select>
       </div>
 

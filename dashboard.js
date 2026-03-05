@@ -9,6 +9,7 @@ const container = document.getElementById('missions-container');
 const progressCounter = document.getElementById('progress-counter');
 const filterReferent = document.getElementById('filter-referent');
 const filterStatus = document.getElementById('filter-status');
+const filterDate = document.getElementById('filter-date');
 
 const modal = document.getElementById('add-task-modal');
 const inputTaskTitle = document.getElementById('new-task-title');
@@ -52,8 +53,9 @@ export async function initDashboard() {
     const tasksResults = await Promise.all(taskPromises);
     tachesData = tasksResults.flat();
 
-    // 3. Populate Referees Filter
+    // 3. Populate Referees & Dates Filters
     populateReferentFilter();
+    populateDateFilter();
 
     // 4. Render
     renderDashboard();
@@ -61,6 +63,7 @@ export async function initDashboard() {
     // 5. Attach Filter Events
     filterReferent.addEventListener('change', renderDashboard);
     filterStatus.addEventListener('change', renderDashboard);
+    filterDate.addEventListener('change', renderDashboard);
     
     // 6. Attach Modal Events
     btnCancelTask.addEventListener('click', closeModal);
@@ -108,6 +111,34 @@ function populateReferentFilter() {
   });
 }
 
+function populateDateFilter() {
+  // Clear current options first (except default)
+  while (filterDate.options.length > 1) filterDate.remove(1);
+
+  // Extract unique start dates (with time) from missionsData
+  const uniqueDateTimes = [...new Set(missionsData
+    .map(m => m.date_debut)
+    .filter(d => d !== null)
+  )].sort();
+
+  uniqueDateTimes.forEach(dtStr => {
+    const d = new Date(dtStr);
+    const label = d.toLocaleDateString('fr-FR', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short'
+    }) + ' ' + d.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    const opt = document.createElement('option');
+    opt.value = dtStr;
+    opt.textContent = label;
+    filterDate.appendChild(opt);
+  });
+}
+
 function getTaskAssigneeName(referentIds) {
   if (!Array.isArray(referentIds) || referentIds.length === 0) return null;
   // Get first assignee
@@ -126,6 +157,7 @@ function getMissionAssigneesNames(referentIds) {
 function renderDashboard() {
   const selectedRef = filterReferent.value;
   const selectedStatus = filterStatus.value;
+  const selectedDate = filterDate.value;
   
   let totalTasks = 0;
   let completedTasks = 0;
@@ -133,6 +165,11 @@ function renderDashboard() {
   container.innerHTML = '';
   
   missionsData.forEach(mission => {
+    // Apply Date Filter to Mission
+    if (selectedDate) {
+      if (mission.date_debut !== selectedDate) return;
+    }
+
     // Get tasks for this mission
     let mTasks = tachesData.filter(t => t.missions_id === mission.Id);
     
@@ -385,6 +422,7 @@ function renderDashboard() {
       if(success) {
         missionsData = missionsData.filter(m => m.Id != missionId);
         tachesData = tachesData.filter(t => t.missions_id != missionId);
+        populateDateFilter();
         renderDashboard();
       } else {
         alert("Erreur");
@@ -554,6 +592,7 @@ async function handleCreateMission() {
       newMission.date_fin = dateFinISO;
       
       missionsData.push(newMission);
+      populateDateFilter();
       renderDashboard();
       addMissionModal.classList.add('hidden');
     } else {
