@@ -1,4 +1,4 @@
-import { fetchMissions, fetchTaches, fetchReferents, updateTache, updateMission, createTache } from './api.js';
+import { fetchMissions, fetchTaches, fetchReferents, updateTache, updateMission, createTache, deleteTache, createMission, deleteMission, linkReferentToMission, unlinkReferentFromMission } from './api.js';
 
 let missionsData = [];
 let tachesData = [];
@@ -12,9 +12,22 @@ const filterStatus = document.getElementById('filter-status');
 
 const modal = document.getElementById('add-task-modal');
 const inputTaskTitle = document.getElementById('new-task-title');
+const inputTaskReferentId = document.getElementById('new-task-referent-id');
 const inputMissionId = document.getElementById('new-task-mission-id');
 const btnSaveTask = document.getElementById('btn-save-task');
 const btnCancelTask = document.getElementById('btn-cancel-task');
+
+const btnOpenAddMission = document.getElementById('btn-open-add-mission');
+const addMissionModal = document.getElementById('add-mission-modal');
+const inputMissionTitle = document.getElementById('new-mission-title');
+const inputMissionDate = document.getElementById('new-mission-date');
+const btnSaveMission = document.getElementById('btn-save-mission');
+const btnCancelMission = document.getElementById('btn-cancel-mission');
+
+const assignMissionModal = document.getElementById('assign-mission-modal');
+const assignMissionList = document.getElementById('assign-mission-list');
+const inputAssignMissionId = document.getElementById('assign-mission-id');
+const btnCloseAssignMission = document.getElementById('btn-close-assign-mission');
 
 export async function initDashboard() {
   container.innerHTML = '<p style="font-size: 1.5rem; font-weight: bold; animation: blink 1s infinite alternate;">Chargement brutal...</p>';
@@ -44,6 +57,17 @@ export async function initDashboard() {
     btnCancelTask.addEventListener('click', closeModal);
     btnSaveTask.addEventListener('click', handleCreateTask);
 
+    btnOpenAddMission.addEventListener('click', () => {
+      inputMissionTitle.value = '';
+      inputMissionDate.value = '';
+      addMissionModal.classList.remove('hidden');
+      inputMissionTitle.focus();
+    });
+    btnCancelMission.addEventListener('click', () => addMissionModal.classList.add('hidden'));
+    btnSaveMission.addEventListener('click', handleCreateMission);
+
+    btnCloseAssignMission.addEventListener('click', () => assignMissionModal.classList.add('hidden'));
+
   } catch (err) {
     container.innerHTML = '<p style="color:red; font-size:1.5rem; border:4px solid black; padding:1rem; background:white;">Erreur de connexion API.</p>';
     console.error(err);
@@ -56,6 +80,11 @@ function populateReferentFilter() {
     opt.value = ref.Id;
     opt.textContent = ref.nom;
     filterReferent.appendChild(opt);
+
+    const optTask = document.createElement('option');
+    optTask.value = ref.Id;
+    optTask.textContent = ref.nom;
+    inputTaskReferentId.appendChild(optTask);
   });
 }
 
@@ -146,16 +175,21 @@ function renderDashboard() {
             <div class="task-title" contenteditable="true" spellcheck="false" data-id="${t.Id}" style="outline: none;">${t.titre}</div>
             ${taskRefName ? `<div class="task-assignee">📍 ${taskRefName}</div>` : ''}
           </div>
+          <button class="btn-delete task-delete" data-id="${t.Id}" title="Supprimer la tâche">🗑️</button>
         </li>
       `;
     }).join('');
 
     card.innerHTML = `
       <div class="mission-header">
-        <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none;">${mission.titre}</h2>
-        <div class="mission-meta">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none; flex: 1;">${mission.titre}</h2>
+          <button class="btn-delete mission-delete" data-id="${mission.Id}" title="Supprimer la mission">🗑️</button>
+        </div>
+        <div class="mission-meta" style="margin-top: 0.5rem;">
           <span class="brutal-tag">${dateStr}</span>
           ${assignees.map(a => `<span class="brutal-tag" style="background:#fff">${a}</span>`).join('')}
+          <button class="btn-action edit-mission-assignees" data-id="${mission.Id}">Gérer l'équipe</button>
         </div>
       </div>
       <ul class="task-list">
@@ -243,6 +277,48 @@ function renderDashboard() {
       openModal(e.target.dataset.mission);
     });
   });
+
+  // Attach Delete Task Event
+  document.querySelectorAll('.task-delete').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      if(!confirm("Supprimer cette tâche ?")) return;
+      const taskId = e.target.closest('.task-delete').dataset.id;
+      progressCounter.innerText = 'Suppression...';
+      const success = await deleteTache(taskId);
+      if(success) {
+        tachesData = tachesData.filter(t => t.Id != taskId);
+        renderDashboard();
+      } else {
+        alert("Erreur");
+        progressCounter.innerText = 'Erreur';
+      }
+    });
+  });
+
+  // Attach Delete Mission Event
+  document.querySelectorAll('.mission-delete').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      if(!confirm("Supprimer cette mission et toutes ses tâches ?")) return;
+      const missionId = e.target.closest('.mission-delete').dataset.id;
+      progressCounter.innerText = 'Suppression...';
+      const success = await deleteMission(missionId);
+      if(success) {
+        missionsData = missionsData.filter(m => m.Id != missionId);
+        tachesData = tachesData.filter(t => t.missions_id != missionId);
+        renderDashboard();
+      } else {
+        alert("Erreur");
+        progressCounter.innerText = 'Erreur';
+      }
+    });
+  });
+
+  // Attach Manage Team Event
+  document.querySelectorAll('.edit-mission-assignees').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      openAssignMissionModal(e.target.dataset.id);
+    });
+  });
 }
 
 function openModal(missionId) {
@@ -259,19 +335,21 @@ function closeModal() {
 async function handleCreateTask() {
   const missionId = parseInt(inputMissionId.value);
   const titre = inputTaskTitle.value.trim();
+  const referentId = inputTaskReferentId.value || null;
   
   if (!titre) return;
   
   btnSaveTask.textContent = "Création...";
   btnSaveTask.disabled = true;
   
-  const newTask = await createTache(missionId, titre);
+  const newTask = await createTache(missionId, titre, referentId);
   
   if (newTask) {
-    // S'assurer que la foreign key "missions_id" existe en local de façon typée pour le filtrage strict ===
     newTask.missions_id = missionId;
+    if (referentId) {
+      newTask.referents_id = parseInt(referentId);
+    }
     
-    // Local update to avoid full refetch
     tachesData.push(newTask);
     renderDashboard();
     closeModal();
@@ -281,4 +359,72 @@ async function handleCreateTask() {
   
   btnSaveTask.textContent = "Ajouter";
   btnSaveTask.disabled = false;
+}
+
+async function handleCreateMission() {
+  const titre = inputMissionTitle.value.trim();
+  const devDate = inputMissionDate.value;
+  
+  if (!titre) return;
+  
+  btnSaveMission.textContent = "Création...";
+  btnSaveMission.disabled = true;
+  
+  let formattedDate = null;
+  if(devDate) {
+    formattedDate = devDate;
+  }
+  
+  const newMission = await createMission(titre, formattedDate);
+  if(newMission) {
+    missionsData.push(newMission);
+    renderDashboard();
+    addMissionModal.classList.add('hidden');
+  } else {
+    alert("Erreur réseau");
+  }
+  btnSaveMission.textContent = "Ajouter";
+  btnSaveMission.disabled = false;
+}
+
+function openAssignMissionModal(missionId) {
+  inputAssignMissionId.value = missionId;
+  const mission = missionsData.find(m => m.Id == missionId);
+  const assignedIds = mission.Referents_Assignes ? mission.Referents_Assignes.map(r => r.Id) : [];
+  
+  assignMissionList.innerHTML = '';
+  
+  referentsData.forEach(ref => {
+    const isAssigned = assignedIds.includes(ref.Id);
+    const div = document.createElement('div');
+    div.style.marginBottom = '0.5rem';
+    div.innerHTML = `
+      <label class="brutal-checkbox-container" style="font-size: 1.1rem;">
+        <input type="checkbox" class="assignee-checkbox" value="${ref.Id}" ${isAssigned ? 'checked' : ''}>
+        <span class="checkmark" style="height:20px; width:20px;"></span>
+        <span style="margin-left: 0.5rem;">${ref.nom}</span>
+      </label>
+    `;
+    const cb = div.querySelector('input');
+    cb.addEventListener('change', async (e) => {
+      progressCounter.innerText = 'Mise à jour...';
+      const refId = parseInt(e.target.value);
+      if(e.target.checked) {
+        const success = await linkReferentToMission(missionId, refId);
+        if(success) {
+           if(!mission.Referents_Assignes) mission.Referents_Assignes = [];
+           mission.Referents_Assignes.push({Id: refId});
+        }
+      } else {
+        const success = await unlinkReferentFromMission(missionId, refId);
+        if(success && mission.Referents_Assignes) {
+           mission.Referents_Assignes = mission.Referents_Assignes.filter(r => r.Id != refId);
+        }
+      }
+      renderDashboard(); // Re-render to update badges
+    });
+    assignMissionList.appendChild(div);
+  });
+  
+  assignMissionModal.classList.remove('hidden');
 }

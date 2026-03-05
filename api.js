@@ -114,19 +114,24 @@ export async function updateMission(missionId, updates) {
 /**
  * Crée une nouvelle tâche et l'assigne à une mission
  */
-export async function createTache(missionId, titre) {
+export async function createTache(missionId, titre, referentId = null) {
   const url = `${NOCODB_URL}/api/v2/tables/${TABLE_TACHES}/records`;
+  
+  const payload = {
+    titre: titre,
+    est_terminee: false,
+    missions_id: parseInt(missionId)
+  };
+
+  if (referentId) {
+    payload.referents_id = parseInt(referentId);
+  }
+
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify([
-        {
-          titre: titre,
-          est_terminee: false,
-          missions_id: parseInt(missionId)
-        }
-      ])
+      body: JSON.stringify([payload])
     });
     if (!res.ok) throw new Error("Erreur lors de la création de la tâche");
     const data = await res.json();
@@ -141,5 +146,114 @@ export async function createTache(missionId, titre) {
   } catch (error) {
     console.error(error);
     return null;
+  }
+}
+
+/**
+ * Supprime une tâche
+ */
+export async function deleteTache(tacheId) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_TACHES}/records`;
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify([
+        { Id: tacheId }
+      ])
+    });
+    if (!res.ok) throw new Error("Erreur lors de la suppression de la tâche");
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+/**
+ * Crée une nouvelle mission
+ */
+export async function createMission(titre, date_debut) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify([
+        {
+          titre: titre,
+          date_debut: date_debut || null
+        }
+      ])
+    });
+    if (!res.ok) throw new Error("Erreur lors de la création de la mission");
+    const data = await res.json();
+    return data[0];
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+/**
+ * Supprime une mission
+ */
+export async function deleteMission(missionId) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records`;
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify([
+        { Id: missionId }
+      ])
+    });
+    if (!res.ok) throw new Error("Erreur lors de la suppression de la mission");
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+/**
+ * Lie un référent à une mission
+ */
+export async function linkReferentToMission(missionId, referentId) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/links/Referents_Assignes/records/${missionId}`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify([
+        { Id: referentId }
+      ])
+    });
+    if (!res.ok) throw new Error("Erreur lors de l'assignation du référent");
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+/**
+ * Délie un référent d'une mission
+ */
+export async function unlinkReferentFromMission(missionId, referentId) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/links/Referents_Assignes/records/${missionId}`;
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify([
+        { Id: referentId }
+      ])
+    });
+    if (!res.ok) throw new Error("Erreur lors de la désassignation du référent");
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
   }
 }
