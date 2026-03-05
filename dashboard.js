@@ -366,6 +366,8 @@ function renderDashboard() {
       animation: 150,
       delay: 300,            // 300ms de clic long avant d'activer le drag-and-drop
       delayOnTouchOnly: true, // S'applique principalement sur mobile pour ne pas bloquer le scroll
+      touchStartThreshold: 5, // Important pour mobile : tolérance de 5px pour les micro-mouvements
+      fallbackTolerance: 3,   // Important pour mobile : évite d'annuler le clic long si le doigt bouge très légèrement
       ghostClass: "sortable-ghost", // Classe style lors du déplacement
       onEnd: async function (evt) {
         if (evt.oldIndex === evt.newIndex) return; // Pas de déplacement
