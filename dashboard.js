@@ -89,7 +89,7 @@ export async function initDashboard() {
 
   } catch (err) {
     container.innerHTML = '<p style="color:red; font-size:1.5rem; border:4px solid black; padding:1rem; background:white;">Erreur de connexion API.</p>';
-    console.error(err);
+
   }
 }
 

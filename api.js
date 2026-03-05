@@ -22,12 +22,12 @@ export async function fetchMissions(archived = false) {
   const where = `(est_archivee,${archived ? 'checked' : 'notchecked'})`;
   const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records?sort=date_debut&where=${where}&limit=100`;
   try {
-    const res = await fetch(url, { headers });
+    const res = await fetch(url, { headers, cache: "no-store" });
     if (!res.ok) throw new Error("Erreur lors de la récupération des missions");
     const data = await res.json();
     return data.list;
   } catch (error) {
-    console.error(error);
+
     return [];
   }
 }
@@ -39,13 +39,13 @@ export async function fetchTaches(missionId) {
   // Filtre les tâches par missions_id (ForeignKey)
   const url = `${NOCODB_URL}/api/v2/tables/${TABLE_TACHES}/records?where=(missions_id,eq,${missionId})&limit=100`;
   try {
-    const res = await fetch(url, { headers });
+    const res = await fetch(url, { headers, cache: "no-store" });
     if (!res.ok) throw new Error("Erreur lors de la récupération des tâches");
     const data = await res.json();
-    console.log(`[fetchTaches] ${data.list.length} tâches récupérées pour missionId=${missionId}`);
+
     return data.list;
   } catch (error) {
-    console.error(`[fetchTaches] Erreur pour missionId=${missionId}:`, error);
+
     return [];
   }
 }
@@ -56,12 +56,12 @@ export async function fetchTaches(missionId) {
 export async function fetchReferents() {
   const url = `${NOCODB_URL}/api/v2/tables/${TABLE_REFERENTS}/records?limit=100`;
   try {
-    const res = await fetch(url, { headers });
+    const res = await fetch(url, { headers, cache: "no-store" });
     if (!res.ok) throw new Error("Erreur lors de la récupération des référents");
     const data = await res.json();
     return data.list;
   } catch (error) {
-    console.error(error);
+
     return [];
   }
 }
@@ -85,7 +85,7 @@ export async function updateTache(tacheId, updates) {
     if (!res.ok) throw new Error("Erreur lors de la mise à jour de la tâche");
     return true;
   } catch (error) {
-    console.error(error);
+
     return false;
   }
 }
@@ -109,7 +109,7 @@ export async function updateMission(missionId, updates) {
     if (!res.ok) throw new Error("Erreur lors de la mise à jour de la mission");
     return true;
   } catch (error) {
-    console.error(error);
+
     return false;
   }
 }
@@ -147,7 +147,7 @@ export async function createTache(missionId, titre, referentId = null) {
     
     return createdTask;
   } catch (error) {
-    console.error(error);
+
     return null;
   }
 }
@@ -168,7 +168,7 @@ export async function deleteTache(tacheId) {
     if (!res.ok) throw new Error("Erreur lors de la suppression de la tâche");
     return true;
   } catch (error) {
-    console.error(error);
+
     return false;
   }
 }
@@ -199,7 +199,7 @@ export async function createMission(titre, date_debut, date_fin) {
     createdMission.date_fin = createdMission.date_fin || date_fin;
     return createdMission;
   } catch (error) {
-    console.error(error);
+
     return null;
   }
 }
@@ -209,19 +209,19 @@ export async function createMission(titre, date_debut, date_fin) {
  */
 export async function deleteMission(missionId) {
   const id = parseInt(missionId);
-  console.log(`[deleteMission] Début suppression mission ${id}`);
+
   
   try {
     // 1. Récupérer les tâches rattachées
     const tasks = await fetchTaches(id);
-    console.log(`[deleteMission] ${tasks.length} tâches trouvées pour la mission ${id}`);
+
     
-    // 2. Si des tâches existent, les supprimer en bloc
+    // 2. Si des tâches existent, les supprimer en bloc AVANT de supprimer la mission
     if (tasks && tasks.length > 0) {
       const taskDeleteUrl = `${NOCODB_URL}/api/v2/tables/${TABLE_TACHES}/records`;
       const taskBody = tasks.map(t => ({ Id: t.Id }));
       
-      console.log(`[deleteMission] Suppression en bloc des tâches:`, taskBody);
+
       const taskRes = await fetch(taskDeleteUrl, {
         method: 'DELETE',
         headers,
@@ -230,14 +230,13 @@ export async function deleteMission(missionId) {
       
       if (!taskRes.ok) {
         const errText = await taskRes.text();
-        console.warn(`[deleteMission] Erreur lors de la suppression des tâches: ${errText}`);
-      } else {
-        console.log(`[deleteMission] Tâches supprimées avec succès`);
+
+        // On continue quand même ? Si c'est un problème de FK restrict ça échouera à l'étape 3.
       }
     }
 
     // 3. Supprimer la mission
-    console.log(`[deleteMission] Suppression de la mission ${id} elle-même`);
+
     const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records`;
     const res = await fetch(url, {
       method: 'DELETE',
@@ -252,10 +251,10 @@ export async function deleteMission(missionId) {
       throw new Error(`Erreur lors de la suppression de la mission: ${errText}`);
     }
     
-    console.log(`[deleteMission] Mission ${id} supprimée avec succès`);
+
     return true;
   } catch (error) {
-    console.error(`[deleteMission] Erreur fatale:`, error);
+
     return false;
   }
 }
@@ -276,7 +275,7 @@ export async function linkReferentToMission(missionId, referentId) {
     if (!res.ok) throw new Error("Erreur lors de l'assignation du référent");
     return true;
   } catch (error) {
-    console.error(error);
+
     return false;
   }
 }
@@ -297,7 +296,7 @@ export async function unlinkReferentFromMission(missionId, referentId) {
     if (!res.ok) throw new Error("Erreur lors de la désassignation du référent");
     return true;
   } catch (error) {
-    console.error(error);
+
     return false;
   }
 }
@@ -319,7 +318,7 @@ export async function createReferent(nom) {
     createdRef.nom = createdRef.nom || nom;
     return createdRef;
   } catch (error) {
-    console.error(error);
+
     return null;
   }
 }
@@ -338,7 +337,7 @@ export async function deleteReferent(referentId) {
     if (!res.ok) throw new Error("Erreur lors de la suppression du référent");
     return true;
   } catch (error) {
-    console.error(error);
+
     return false;
   }
 }
