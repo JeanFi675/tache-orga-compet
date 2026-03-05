@@ -173,7 +173,7 @@ export async function deleteTache(tacheId) {
 /**
  * Crée une nouvelle mission
  */
-export async function createMission(titre, date_debut) {
+export async function createMission(titre, date_debut, date_fin) {
   const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records`;
   try {
     const res = await fetch(url, {
@@ -182,13 +182,19 @@ export async function createMission(titre, date_debut) {
       body: JSON.stringify([
         {
           titre: titre,
-          date_debut: date_debut || null
+          date_debut: date_debut || null,
+          date_fin: date_fin || null
         }
       ])
     });
     if (!res.ok) throw new Error("Erreur lors de la création de la mission");
     const data = await res.json();
-    return data[0];
+    const createdMission = data[0];
+    // Augment local object as NocoDB may only return Id
+    createdMission.titre = createdMission.titre || titre;
+    createdMission.date_debut = createdMission.date_debut || date_debut;
+    createdMission.date_fin = createdMission.date_fin || date_fin;
+    return createdMission;
   } catch (error) {
     console.error(error);
     return null;

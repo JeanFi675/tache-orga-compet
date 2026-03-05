@@ -21,6 +21,7 @@ const btnOpenAddMission = document.getElementById('btn-open-add-mission');
 const addMissionModal = document.getElementById('add-mission-modal');
 const inputMissionTitle = document.getElementById('new-mission-title');
 const inputMissionDate = document.getElementById('new-mission-date');
+const inputMissionDateFin = document.getElementById('new-mission-date-fin');
 const btnSaveMission = document.getElementById('btn-save-mission');
 const btnCancelMission = document.getElementById('btn-cancel-mission');
 
@@ -60,6 +61,7 @@ export async function initDashboard() {
     btnOpenAddMission.addEventListener('click', () => {
       inputMissionTitle.value = '';
       inputMissionDate.value = '';
+      inputMissionDateFin.value = '';
       addMissionModal.classList.remove('hidden');
       inputMissionTitle.focus();
     });
@@ -89,14 +91,14 @@ function populateReferentFilter() {
 }
 
 function getTaskAssigneeName(referentIds) {
-  if (!referentIds || referentIds.length === 0) return null;
+  if (!Array.isArray(referentIds) || referentIds.length === 0) return null;
   // Get first assignee
   const ref = referentsData.find(r => r.Id === referentIds[0].Id);
   return ref ? ref.nom : null;
 }
 
 function getMissionAssigneesNames(referentIds) {
-  if (!referentIds || referentIds.length === 0) return ["Non assigné"];
+  if (!Array.isArray(referentIds) || referentIds.length === 0) return ["Non assigné"];
   return referentIds.map(idObj => {
     const ref = referentsData.find(r => r.Id === idObj.Id);
     return ref ? ref.nom : "Inconnu";
@@ -155,7 +157,34 @@ function renderDashboard() {
     card.className = 'mission-card';
     
     const assignees = getMissionAssigneesNames(mission.Referents_Assignes);
-    const dateStr = mission.date_debut ? new Date(mission.date_debut).toLocaleString('fr-FR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit'}) : 'Date inconnue';
+    
+    // Formatting date range
+    const startDate = mission.date_debut ? new Date(mission.date_debut) : null;
+    const endDate = mission.date_fin ? new Date(mission.date_fin) : null;
+
+    let displayDate = 'Date inconnue';
+    
+    if (startDate) {
+      const dayStr = startDate.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+      });
+      const startTime = startDate.toLocaleTimeString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      if (endDate) {
+        const endTime = endDate.toLocaleTimeString('fr-FR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        displayDate = `${dayStr} ${startTime} - ${endTime}`;
+      } else {
+        displayDate = `${dayStr} ${startTime}`;
+      }
+    }
     
     let tasksHTML = mTasks.map(t => {
       const isChecked = t.est_terminee ? 'checked' : '';
@@ -183,11 +212,11 @@ function renderDashboard() {
     card.innerHTML = `
       <div class="mission-header">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none; flex: 1;">${mission.titre}</h2>
+          <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none; flex: 1;">${mission.titre || 'Sans titre'}</h2>
           <button class="btn-delete mission-delete" data-id="${mission.Id}" title="Supprimer la mission">🗑️</button>
         </div>
         <div class="mission-meta" style="margin-top: 0.5rem;">
-          <span class="brutal-tag">${dateStr}</span>
+          <span class="brutal-tag">${displayDate}</span>
           ${assignees.map(a => `<span class="brutal-tag" style="background:#fff">${a}</span>`).join('')}
           <button class="btn-action edit-mission-assignees" data-id="${mission.Id}">Gérer l'équipe</button>
         </div>
@@ -364,18 +393,14 @@ async function handleCreateTask() {
 async function handleCreateMission() {
   const titre = inputMissionTitle.value.trim();
   const devDate = inputMissionDate.value;
+  const devDateFin = inputMissionDateFin.value;
   
   if (!titre) return;
   
   btnSaveMission.textContent = "Création...";
   btnSaveMission.disabled = true;
   
-  let formattedDate = null;
-  if(devDate) {
-    formattedDate = devDate;
-  }
-  
-  const newMission = await createMission(titre, formattedDate);
+  const newMission = await createMission(titre, devDate || null, devDateFin || null);
   if(newMission) {
     missionsData.push(newMission);
     renderDashboard();

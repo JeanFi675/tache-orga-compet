@@ -47,7 +47,10 @@
         <div class="counter-brutal" id="progress-counter">0 / 0 Terminées</div>
       </div>
 
-      <div class="filters-container" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <div
+        class="filters-container"
+        style="display: flex; gap: 1rem; flex-wrap: wrap"
+      >
         <select id="filter-referent" class="select-brutal">
           <option value="ALL">Tous les référents</option>
           <!-- Loaded dynamically -->
@@ -57,7 +60,13 @@
           <option value="INCOMPLETE">À faire</option>
           <option value="COMPLETED">Terminées</option>
         </select>
-        <button id="btn-open-add-mission" class="btn-brutal" style="margin-left: auto;">+ Nouvelle Mission</button>
+        <button
+          id="btn-open-add-mission"
+          class="btn-brutal"
+          style="margin-left: auto"
+        >
+          + Nouvelle Mission
+        </button>
       </div>
 
       <div id="missions-container">
@@ -69,15 +78,32 @@
     <div id="add-task-modal" class="brutal-modal hidden">
       <div class="brutal-modal-content">
         <h2>Nouvelle Tâche</h2>
-        <input type="text" id="new-task-title" class="input-brutal" placeholder="Titre de la tâche" />
-        <select id="new-task-referent-id" class="select-brutal" style="margin-top: 1rem; width: 100%;">
+        <input
+          type="text"
+          id="new-task-title"
+          class="input-brutal"
+          placeholder="Titre de la tâche"
+        />
+        <select
+          id="new-task-referent-id"
+          class="select-brutal"
+          style="margin-top: 1rem; width: 100%"
+        >
           <option value="">Non assigné</option>
           <!-- Loaded dynamically -->
         </select>
         <input type="hidden" id="new-task-mission-id" />
-        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-          <button id="btn-save-task" class="btn-brutal" style="flex:1;">Ajouter</button>
-          <button id="btn-cancel-task" class="btn-brutal" style="flex:1; background-color: var(--color-ice);">Annuler</button>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem">
+          <button id="btn-save-task" class="btn-brutal" style="flex: 1">
+            Ajouter
+          </button>
+          <button
+            id="btn-cancel-task"
+            class="btn-brutal"
+            style="flex: 1; background-color: var(--color-ice)"
+          >
+            Annuler
+          </button>
         </div>
       </div>
     </div>
@@ -86,11 +112,49 @@
     <div id="add-mission-modal" class="brutal-modal hidden">
       <div class="brutal-modal-content">
         <h2>Nouvelle Mission</h2>
-        <input type="text" id="new-mission-title" class="input-brutal" placeholder="Titre de la mission" />
-        <input type="datetime-local" id="new-mission-date" class="input-brutal" style="margin-top: 1rem; width: 100%;" />
-        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-          <button id="btn-save-mission" class="btn-brutal" style="flex:1;">Ajouter</button>
-          <button id="btn-cancel-mission" class="btn-brutal" style="flex:1; background-color: var(--color-ice);">Annuler</button>
+        <input
+          type="text"
+          id="new-mission-title"
+          class="input-brutal"
+          placeholder="Titre de la mission"
+        />
+        <div style="margin-top: 1rem">
+          <label
+            for="new-mission-date"
+            style="display: block; font-weight: bold; margin-bottom: 0.2rem"
+            >Date de début</label
+          >
+          <input
+            type="datetime-local"
+            id="new-mission-date"
+            class="input-brutal"
+            style="width: 100%"
+          />
+        </div>
+        <div style="margin-top: 1rem">
+          <label
+            for="new-mission-date-fin"
+            style="display: block; font-weight: bold; margin-bottom: 0.2rem"
+            >Date de fin</label
+          >
+          <input
+            type="datetime-local"
+            id="new-mission-date-fin"
+            class="input-brutal"
+            style="width: 100%"
+          />
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+          <button id="btn-save-mission" class="btn-brutal" style="flex: 1">
+            Ajouter
+          </button>
+          <button
+            id="btn-cancel-mission"
+            class="btn-brutal"
+            style="flex: 1; background-color: var(--color-ice)"
+          >
+            Annuler
+          </button>
         </div>
       </div>
     </div>
@@ -99,12 +163,26 @@
     <div id="assign-mission-modal" class="brutal-modal hidden">
       <div class="brutal-modal-content">
         <h2>Gérer l'équipe</h2>
-        <div id="assign-mission-list" style="margin: 1rem 0; max-height: 300px; overflow-y: auto; text-align: left;">
+        <div
+          id="assign-mission-list"
+          style="
+            margin: 1rem 0;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+          "
+        >
           <!-- Loaded dynamically -->
         </div>
         <input type="hidden" id="assign-mission-id" />
-        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-          <button id="btn-close-assign-mission" class="btn-brutal" style="flex:1; background-color: var(--color-ice);">Fermer</button>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem">
+          <button
+            id="btn-close-assign-mission"
+            class="btn-brutal"
+            style="flex: 1; background-color: var(--color-ice)"
+          >
+            Fermer
+          </button>
         </div>
       </div>
     </div>
