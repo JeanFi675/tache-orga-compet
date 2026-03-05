@@ -678,12 +678,12 @@ function openAssignMissionModal(missionId) {
       if(e.target.checked) {
         const success = await linkReferentToMission(missionId, refId);
         if(success) {
-           if(!mission.Referents_Assignes) mission.Referents_Assignes = [];
+           if(!Array.isArray(mission.Referents_Assignes)) mission.Referents_Assignes = [];
            mission.Referents_Assignes.push({Id: refId});
         }
       } else {
         const success = await unlinkReferentFromMission(missionId, refId);
-        if(success && mission.Referents_Assignes) {
+        if(success && Array.isArray(mission.Referents_Assignes)) {
            mission.Referents_Assignes = mission.Referents_Assignes.filter(r => r.Id != refId);
         }
       }

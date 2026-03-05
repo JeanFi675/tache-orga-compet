@@ -20,7 +20,8 @@ const headers = {
 export async function fetchMissions(archived = false) {
   // On récupère les missions filtrées par statut d'archivage
   const where = `(est_archivee,${archived ? 'checked' : 'notchecked'})`;
-  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records?sort=date_debut&where=${where}&limit=100`;
+  // On utilise nested[Referents_Assignes][all]=true pour récupérer les objets référents complets au lieu du simple compteur
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records?sort=date_debut&where=${where}&limit=100&nested[Referents_Assignes][all]=true`;
   try {
     const res = await fetch(url, { headers, cache: "no-store" });
     if (!res.ok) throw new Error("Erreur lors de la récupération des missions");
