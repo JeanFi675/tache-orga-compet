@@ -257,7 +257,7 @@ function closeModal() {
 }
 
 async function handleCreateTask() {
-  const missionId = inputMissionId.value;
+  const missionId = parseInt(inputMissionId.value);
   const titre = inputTaskTitle.value.trim();
   
   if (!titre) return;
@@ -268,6 +268,9 @@ async function handleCreateTask() {
   const newTask = await createTache(missionId, titre);
   
   if (newTask) {
+    // S'assurer que la foreign key "missions_id" existe en local de façon typée pour le filtrage strict ===
+    newTask.missions_id = missionId;
+    
     // Local update to avoid full refetch
     tachesData.push(newTask);
     renderDashboard();

@@ -130,7 +130,14 @@ export async function createTache(missionId, titre) {
     });
     if (!res.ok) throw new Error("Erreur lors de la création de la tâche");
     const data = await res.json();
-    return data[0]; // retourne la tâche créée
+    
+    // NocoDB API v2 bulk endpoints sometimes only return the generated Id.
+    // We augment the local object with the known submitted values to ensure immediate UI rendering is complete.
+    const createdTask = data[0];
+    createdTask.titre = createdTask.titre || titre;
+    createdTask.est_terminee = createdTask.est_terminee || false;
+    
+    return createdTask;
   } catch (error) {
     console.error(error);
     return null;
