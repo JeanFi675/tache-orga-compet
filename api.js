@@ -64,9 +64,9 @@ export async function fetchReferents() {
 }
 
 /**
- * Met à jour le statut "est_terminee" d'une tâche
+ * Met à jour une tâche (est_terminee, titre, etc.)
  */
-export async function updateTache(tacheId, estTerminee) {
+export async function updateTache(tacheId, updates) {
   const url = `${NOCODB_URL}/api/v2/tables/${TABLE_TACHES}/records`;
   try {
     const res = await fetch(url, {
@@ -75,12 +75,35 @@ export async function updateTache(tacheId, estTerminee) {
       body: JSON.stringify([
         {
           Id: tacheId,
-          est_terminee: estTerminee
+          ...updates
         }
-      ]
-      )
+      ])
     });
     if (!res.ok) throw new Error("Erreur lors de la mise à jour de la tâche");
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+/**
+ * Met à jour une mission (titre, etc.)
+ */
+export async function updateMission(missionId, updates) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records`;
+  try {
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify([
+        {
+          Id: missionId,
+          ...updates
+        }
+      ])
+    });
+    if (!res.ok) throw new Error("Erreur lors de la mise à jour de la mission");
     return true;
   } catch (error) {
     console.error(error);
@@ -101,7 +124,7 @@ export async function createTache(missionId, titre) {
         {
           titre: titre,
           est_terminee: false,
-          mission_id: missionId
+          mission_id: [parseInt(missionId)]
         }
       ])
     });

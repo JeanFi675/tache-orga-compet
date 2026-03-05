@@ -1,4 +1,4 @@
-import { fetchMissions, fetchTaches, fetchReferents, updateTache, createTache } from './api.js';
+import { fetchMissions, fetchTaches, fetchReferents, updateTache, updateMission, createTache } from './api.js';
 
 let missionsData = [];
 let tachesData = [];
@@ -143,7 +143,7 @@ function renderDashboard() {
             <span class="checkmark"></span>
           </label>
           <div class="task-content">
-            <div class="task-title">${t.titre}</div>
+            <div class="task-title" contenteditable="true" spellcheck="false" data-id="${t.Id}" style="outline: none;">${t.titre}</div>
             ${taskRefName ? `<div class="task-assignee">📍 ${taskRefName}</div>` : ''}
           </div>
         </li>
@@ -152,7 +152,7 @@ function renderDashboard() {
 
     card.innerHTML = `
       <div class="mission-header">
-        <h2 class="mission-title">${mission.titre}</h2>
+        <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none;">${mission.titre}</h2>
         <div class="mission-meta">
           <span class="brutal-tag">${dateStr}</span>
           ${assignees.map(a => `<span class="brutal-tag" style="background:#fff">${a}</span>`).join('')}
@@ -188,10 +188,52 @@ function renderDashboard() {
       progressCounter.innerText = 'Sauvegarde...';
       
       // API call
-      await updateTache(taskId, newVal);
+      await updateTache(taskId, { est_terminee: newVal });
       
       // Re-render (to update counter properly if it didn't match local data, etc.)
       renderDashboard();
+    });
+  });
+
+  // Editable titles logic
+  document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        el.blur();
+      }
+    });
+  });
+
+  document.querySelectorAll('.task-title').forEach(el => {
+    el.addEventListener('blur', async (e) => {
+      const taskId = e.target.dataset.id;
+      const newTitle = e.target.innerText.trim();
+      const t = tachesData.find(x => x.Id == taskId);
+      if (t && t.titre !== newTitle && newTitle !== '') {
+        t.titre = newTitle;
+        progressCounter.innerText = 'Sauvegarde...';
+        await updateTache(taskId, { titre: newTitle });
+        renderDashboard();
+      } else if (newTitle === '') {
+        e.target.innerText = t.titre;
+      }
+    });
+  });
+
+  document.querySelectorAll('.mission-title').forEach(el => {
+    el.addEventListener('blur', async (e) => {
+      const missionId = e.target.dataset.id;
+      const newTitle = e.target.innerText.trim();
+      const m = missionsData.find(x => x.Id == missionId);
+      if (m && m.titre !== newTitle && newTitle !== '') {
+        m.titre = newTitle;
+        progressCounter.innerText = 'Sauvegarde...';
+        await updateMission(missionId, { titre: newTitle });
+        renderDashboard();
+      } else if (newTitle === '') {
+        e.target.innerText = m.titre;
+      }
     });
   });
 
