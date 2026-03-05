@@ -171,41 +171,52 @@ function renderDashboard() {
     }
 
     // Get tasks for this mission
-    let mTasks = tachesData.filter(t => t.missions_id === mission.Id);
-    
-    // Apply Status Filter to Tasks
-    if (selectedStatus === 'COMPLETED') {
-      mTasks = mTasks.filter(t => t.est_terminee === true);
-    } else if (selectedStatus === 'INCOMPLETE') {
-      mTasks = mTasks.filter(t => t.est_terminee !== true);
-    }
+    const baseTasks = tachesData.filter(t => t.missions_id === mission.Id);
+    let relevantTasks = baseTasks; // Les tâches qui "appartiennent" logiquement à ce référent
     
     // Apply Referee Filter to Mission OR Tasks
-    // A mission is shown if it matches the referee itself, OR if any of its tasks matches the referee
-    // For simplicity, if a filter is active, we only show tasks assigned to this referee
     let missionMatchesRef = false;
+    let isMissionReferent = false;
+    
     if (selectedRef === 'ALL') {
       missionMatchesRef = true;
+      isMissionReferent = true;
     } else {
       // Check if mission has the referee
       const missionRefs = mission.Referents_Assignes;
       if (Array.isArray(missionRefs) && missionRefs.find(r => r.Id == selectedRef)) {
         missionMatchesRef = true;
+        isMissionReferent = true; // Mène à compter TOUTES les tâches
       }
       
-      // Filter tasks to only those assigned to the selected ref (or if mission is assigned to the ref, show all tasks? Let's show all tasks if mission matches, otherwise filter tasks)
       if (!missionMatchesRef) {
-        mTasks = mTasks.filter(t => t.referents_id == selectedRef);
-        if (mTasks.length > 0) missionMatchesRef = true;
+        // Le référent n'est assigné qu'à des tâches spécifiques, on ne compte que celles-ci
+        relevantTasks = baseTasks.filter(t => t.referents_id == selectedRef);
+        if (relevantTasks.length > 0) {
+          missionMatchesRef = true;
+        }
       }
     }
     
     if (!missionMatchesRef) return; // Skip mission
+    
+    // Apply Status Filter to Tasks (seulement pour l'affichage)
+    let mTasks = relevantTasks;
+    if (selectedStatus === 'COMPLETED') {
+      mTasks = mTasks.filter(t => t.est_terminee === true);
+    } else if (selectedStatus === 'INCOMPLETE') {
+      mTasks = mTasks.filter(t => t.est_terminee !== true);
+    }
+
+    // Si le référent n'est pas assigné à la mission, et que le filtre de statut masque toutes ses tâches,
+    // on masque la mission (pour correspondre au comportement initial).
+    if (!isMissionReferent && mTasks.length === 0) {
+      return;
+    }
 
     // Count statistics for the counter
-    const allMissionTasks = tachesData.filter(t => t.missions_id === mission.Id);
-    totalTasks += allMissionTasks.length;
-    completedTasks += allMissionTasks.filter(t => t.est_terminee === true).length;
+    totalTasks += relevantTasks.length;
+    completedTasks += relevantTasks.filter(t => t.est_terminee === true).length;
     
     // Render Mission Card
     const card = document.createElement('div');
