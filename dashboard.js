@@ -85,7 +85,7 @@ function renderDashboard() {
   
   missionsData.forEach(mission => {
     // Get tasks for this mission
-    let mTasks = tachesData.filter(t => t.mission_id && t.mission_id[0] && t.mission_id[0].Id === mission.Id);
+    let mTasks = tachesData.filter(t => t.missions_id === mission.Id);
     
     // Apply Status Filter to Tasks
     if (selectedStatus === 'COMPLETED') {
@@ -109,10 +109,7 @@ function renderDashboard() {
       
       // Filter tasks to only those assigned to the selected ref (or if mission is assigned to the ref, show all tasks? Let's show all tasks if mission matches, otherwise filter tasks)
       if (!missionMatchesRef) {
-        mTasks = mTasks.filter(t => {
-          const tRefs = t.referent_assigne_id || [];
-          return tRefs.find(r => r.Id == selectedRef);
-        });
+        mTasks = mTasks.filter(t => t.referents_id == selectedRef);
         if (mTasks.length > 0) missionMatchesRef = true;
       }
     }
@@ -120,7 +117,7 @@ function renderDashboard() {
     if (!missionMatchesRef) return; // Skip mission
 
     // Count statistics for the counter
-    const allMissionTasks = tachesData.filter(t => t.mission_id && t.mission_id[0] && t.mission_id[0].Id === mission.Id);
+    const allMissionTasks = tachesData.filter(t => t.missions_id === mission.Id);
     totalTasks += allMissionTasks.length;
     completedTasks += allMissionTasks.filter(t => t.est_terminee === true).length;
     
@@ -134,7 +131,10 @@ function renderDashboard() {
     let tasksHTML = mTasks.map(t => {
       const isChecked = t.est_terminee ? 'checked' : '';
       const completedClass = t.est_terminee ? 'completed' : '';
-      const taskRefName = getTaskAssigneeName(t.referent_assigne_id);
+      
+      // Get assigneee using the new foreign key
+      const ref = referentsData.find(r => r.Id === t.referents_id);
+      const taskRefName = ref ? ref.nom : null;
       
       return `
         <li class="task-item ${completedClass}" data-id="${t.Id}">

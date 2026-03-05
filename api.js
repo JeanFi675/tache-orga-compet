@@ -34,8 +34,8 @@ export async function fetchMissions() {
  * Récupère les sous-tâches liées à une mission
  */
 export async function fetchTaches(missionId) {
-  // Filtre les tâches par mission_id
-  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_TACHES}/records?where=(mission_id,eq,${missionId})&limit=100`;
+  // Filtre les tâches par missions_id (ForeignKey)
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_TACHES}/records?where=(missions_id,eq,${missionId})&limit=100`;
   try {
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error("Erreur lors de la récupération des tâches");
@@ -124,7 +124,7 @@ export async function createTache(missionId, titre) {
         {
           titre: titre,
           est_terminee: false,
-          mission_id: [parseInt(missionId)]
+          missions_id: parseInt(missionId)
         }
       ])
     });
