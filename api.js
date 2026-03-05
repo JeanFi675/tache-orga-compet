@@ -220,7 +220,7 @@ export async function deleteMission(missionId) {
  * Lie un référent à une mission
  */
 export async function linkReferentToMission(missionId, referentId) {
-  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/links/Referents_Assignes/records/${missionId}`;
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/links/cj4bl5l73xtl2t3/records/${missionId}`;
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -241,7 +241,7 @@ export async function linkReferentToMission(missionId, referentId) {
  * Délie un référent d'une mission
  */
 export async function unlinkReferentFromMission(missionId, referentId) {
-  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/links/Referents_Assignes/records/${missionId}`;
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/links/cj4bl5l73xtl2t3/records/${missionId}`;
   try {
     const res = await fetch(url, {
       method: 'DELETE',
