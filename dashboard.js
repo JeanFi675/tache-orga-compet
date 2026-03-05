@@ -21,9 +21,15 @@ const btnOpenAddMission = document.getElementById('btn-open-add-mission');
 const addMissionModal = document.getElementById('add-mission-modal');
 const inputMissionTitle = document.getElementById('new-mission-title');
 const inputMissionDate = document.getElementById('new-mission-date');
-const inputMissionDateFin = document.getElementById('new-mission-date-fin');
+const inputMissionTimeDebut = document.getElementById('new-mission-time-debut');
+const inputMissionTimeFin = document.getElementById('new-mission-time-fin');
 const btnSaveMission = document.getElementById('btn-save-mission');
 const btnCancelMission = document.getElementById('btn-cancel-mission');
+const missionModalTitle = document.getElementById('mission-modal-title');
+const taskModalTitle = document.getElementById('task-modal-title');
+
+let editingMissionId = null;
+let editingTaskId = null;
 
 const assignMissionModal = document.getElementById('assign-mission-modal');
 const assignMissionList = document.getElementById('assign-mission-list');
@@ -59,9 +65,13 @@ export async function initDashboard() {
     btnSaveTask.addEventListener('click', handleCreateTask);
 
     btnOpenAddMission.addEventListener('click', () => {
+      editingMissionId = null;
+      missionModalTitle.textContent = "Nouvelle Mission";
+      btnSaveMission.textContent = "Ajouter";
       inputMissionTitle.value = '';
       inputMissionDate.value = '';
-      inputMissionDateFin.value = '';
+      inputMissionTimeDebut.value = '';
+      inputMissionTimeFin.value = '';
       addMissionModal.classList.remove('hidden');
       inputMissionTitle.focus();
     });
@@ -133,8 +143,8 @@ function renderDashboard() {
       missionMatchesRef = true;
     } else {
       // Check if mission has the referee
-      const missionRefs = mission.Referents_Assignes || [];
-      if (missionRefs.find(r => r.Id == selectedRef)) {
+      const missionRefs = mission.Referents_Assignes;
+      if (Array.isArray(missionRefs) && missionRefs.find(r => r.Id == selectedRef)) {
         missionMatchesRef = true;
       }
       
@@ -204,7 +214,10 @@ function renderDashboard() {
             <div class="task-title" contenteditable="true" spellcheck="false" data-id="${t.Id}" style="outline: none;">${t.titre}</div>
             ${taskRefName ? `<div class="task-assignee">📍 ${taskRefName}</div>` : ''}
           </div>
-          <button class="btn-delete task-delete" data-id="${t.Id}" title="Supprimer la tâche">🗑️</button>
+          <div class="task-actions" style="display: flex; gap: 0.5rem;">
+            <button class="btn-action task-edit" data-id="${t.Id}" title="Modifier la tâche">✏️</button>
+            <button class="btn-delete task-delete" data-id="${t.Id}" title="Supprimer la tâche">🗑️</button>
+          </div>
         </li>
       `;
     }).join('');
@@ -213,7 +226,10 @@ function renderDashboard() {
       <div class="mission-header">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none; flex: 1;">${mission.titre || 'Sans titre'}</h2>
-          <button class="btn-delete mission-delete" data-id="${mission.Id}" title="Supprimer la mission">🗑️</button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-action mission-edit" data-id="${mission.Id}" title="Modifier la mission">✏️</button>
+            <button class="btn-delete mission-delete" data-id="${mission.Id}" title="Supprimer la mission">🗑️</button>
+          </div>
         </div>
         <div class="mission-meta" style="margin-top: 0.5rem;">
           <span class="brutal-tag">${displayDate}</span>
@@ -303,7 +319,26 @@ function renderDashboard() {
   // Attach Add Modals
   document.querySelectorAll('.btn-add-task').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      openModal(e.target.dataset.mission);
+      editingTaskId = null;
+      taskModalTitle.textContent = "Nouvelle Tâche";
+      btnSaveTask.textContent = "Ajouter";
+      openTaskModal(e.target.dataset.mission);
+    });
+  });
+
+  // Attach Edit Task Event
+  document.querySelectorAll('.task-edit').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const taskId = e.target.closest('.task-edit').dataset.id;
+      openEditTaskModal(taskId);
+    });
+  });
+
+  // Attach Edit Mission Event
+  document.querySelectorAll('.mission-edit').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const missionId = e.target.closest('.mission-edit').dataset.id;
+      openEditMissionModal(missionId);
     });
   });
 
@@ -350,11 +385,58 @@ function renderDashboard() {
   });
 }
 
-function openModal(missionId) {
+function openTaskModal(missionId) {
   inputMissionId.value = missionId;
   inputTaskTitle.value = '';
+  inputTaskReferentId.value = '';
   modal.classList.remove('hidden');
   inputTaskTitle.focus();
+}
+
+function openEditTaskModal(taskId) {
+  const task = tachesData.find(t => t.Id == taskId);
+  if (!task) return;
+  
+  editingTaskId = taskId;
+  taskModalTitle.textContent = "Modifier la Tâche";
+  btnSaveTask.textContent = "Enregistrer";
+  
+  inputMissionId.value = task.missions_id;
+  inputTaskTitle.value = task.titre;
+  inputTaskReferentId.value = task.referents_id || '';
+  
+  modal.classList.remove('hidden');
+  inputTaskTitle.focus();
+}
+
+function openEditMissionModal(missionId) {
+  const mission = missionsData.find(m => m.Id == missionId);
+  if (!mission) return;
+
+  editingMissionId = missionId;
+  missionModalTitle.textContent = "Modifier la Mission";
+  btnSaveMission.textContent = "Enregistrer";
+
+  inputMissionTitle.value = mission.titre || '';
+  
+  if (mission.date_debut) {
+    const d = new Date(mission.date_debut);
+    inputMissionDate.value = d.toISOString().split('T')[0];
+    inputMissionTimeDebut.value = d.toTimeString().slice(0, 5);
+  } else {
+    inputMissionDate.value = '';
+    inputMissionTimeDebut.value = '';
+  }
+
+  if (mission.date_fin) {
+    const d = new Date(mission.date_fin);
+    inputMissionTimeFin.value = d.toTimeString().slice(0, 5);
+  } else {
+    inputMissionTimeFin.value = '';
+  }
+
+  addMissionModal.classList.remove('hidden');
+  inputMissionTitle.focus();
 }
 
 function closeModal() {
@@ -368,22 +450,39 @@ async function handleCreateTask() {
   
   if (!titre) return;
   
-  btnSaveTask.textContent = "Création...";
+  const isEditing = editingTaskId !== null;
+  btnSaveTask.textContent = isEditing ? "Enregistrement..." : "Création...";
   btnSaveTask.disabled = true;
   
-  const newTask = await createTache(missionId, titre, referentId);
-  
-  if (newTask) {
-    newTask.missions_id = missionId;
-    if (referentId) {
-      newTask.referents_id = parseInt(referentId);
+  if (isEditing) {
+    const success = await updateTache(editingTaskId, { 
+      titre, 
+      referents_id: referentId ? parseInt(referentId) : null 
+    });
+    if (success) {
+      const t = tachesData.find(x => x.Id == editingTaskId);
+      if (t) {
+        t.titre = titre;
+        t.referents_id = referentId ? parseInt(referentId) : null;
+      }
+      renderDashboard();
+      closeModal();
+    } else {
+      alert("Erreur lors de la modification");
     }
-    
-    tachesData.push(newTask);
-    renderDashboard();
-    closeModal();
   } else {
-    alert("Erreur réseau");
+    const newTask = await createTache(missionId, titre, referentId);
+    if (newTask) {
+      newTask.missions_id = missionId;
+      if (referentId) {
+        newTask.referents_id = parseInt(referentId);
+      }
+      tachesData.push(newTask);
+      renderDashboard();
+      closeModal();
+    } else {
+      alert("Erreur réseau");
+    }
   }
   
   btnSaveTask.textContent = "Ajouter";
@@ -393,20 +492,57 @@ async function handleCreateTask() {
 async function handleCreateMission() {
   const titre = inputMissionTitle.value.trim();
   const devDate = inputMissionDate.value;
-  const devDateFin = inputMissionDateFin.value;
+  const devTimeDebut = inputMissionTimeDebut.value;
+  const devTimeFin = inputMissionTimeFin.value;
   
   if (!titre) return;
   
-  btnSaveMission.textContent = "Création...";
+  const isEditing = editingMissionId !== null;
+  btnSaveMission.textContent = isEditing ? "Enregistrement..." : "Création...";
   btnSaveMission.disabled = true;
   
-  const newMission = await createMission(titre, devDate || null, devDateFin || null);
-  if(newMission) {
-    missionsData.push(newMission);
-    renderDashboard();
-    addMissionModal.classList.add('hidden');
+  let dateDebutISO = null;
+  let dateFinISO = null;
+
+  if (devDate && devTimeDebut) {
+    dateDebutISO = `${devDate}T${devTimeDebut}:00`;
+  }
+  if (devDate && devTimeFin) {
+    dateFinISO = `${devDate}T${devTimeFin}:00`;
+  }
+
+  if (isEditing) {
+    const success = await updateMission(editingMissionId, {
+      titre,
+      date_debut: dateDebutISO,
+      date_fin: dateFinISO
+    });
+    if (success) {
+      const m = missionsData.find(x => x.Id == editingMissionId);
+      if (m) {
+        m.titre = titre;
+        m.date_debut = dateDebutISO;
+        m.date_fin = dateFinISO;
+      }
+      renderDashboard();
+      addMissionModal.classList.add('hidden');
+    } else {
+      alert("Erreur lors de la modification");
+    }
   } else {
-    alert("Erreur réseau");
+    const newMission = await createMission(titre, dateDebutISO, dateFinISO);
+    if(newMission) {
+      // Manual augmentation because API might return only Id
+      newMission.titre = titre;
+      newMission.date_debut = dateDebutISO;
+      newMission.date_fin = dateFinISO;
+      
+      missionsData.push(newMission);
+      renderDashboard();
+      addMissionModal.classList.add('hidden');
+    } else {
+      alert("Erreur réseau");
+    }
   }
   btnSaveMission.textContent = "Ajouter";
   btnSaveMission.disabled = false;
@@ -415,7 +551,7 @@ async function handleCreateMission() {
 function openAssignMissionModal(missionId) {
   inputAssignMissionId.value = missionId;
   const mission = missionsData.find(m => m.Id == missionId);
-  const assignedIds = mission.Referents_Assignes ? mission.Referents_Assignes.map(r => r.Id) : [];
+  const assignedIds = Array.isArray(mission.Referents_Assignes) ? mission.Referents_Assignes.map(r => r.Id) : [];
   
   assignMissionList.innerHTML = '';
   
