@@ -11,15 +11,24 @@ const dashboardView = document.getElementById('dashboard-view');
 // We simulate checking the password from GitHub secrets/Local Env Variable
 const CORRECT_PASSWORD = import.meta.env.VITE_GATEKEEPER_PASSWORD;
 
+// Check session on load
+if (sessionStorage.getItem('isLoggedIn') === 'true') {
+  loginView.classList.add('hidden');
+  dashboardView.classList.remove('hidden');
+  initDashboard();
+}
+
 function handleLogin(e) {
   e.preventDefault();
   const pwd = loginPasswordInput.value;
   
   if (pwd === CORRECT_PASSWORD) {
-    // Hide login, show dashboard
     loginView.classList.add('hidden');
     dashboardView.classList.remove('hidden');
     loginError.classList.add('hidden');
+    
+    // Set Session
+    sessionStorage.setItem('isLoggedIn', 'true');
     
     // Initialize Dashboard data load
     initDashboard();

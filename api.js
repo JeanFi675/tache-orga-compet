@@ -15,10 +15,12 @@ const headers = {
 
 /**
  * Récupère la liste des missions triées par date de début
+ * @param {boolean} archived Si vrai, récupère les archivées, sinon les non-archivées
  */
-export async function fetchMissions() {
-  // On récupère les missions avec les liens vers les tâches et référents
-  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records?sort=date_debut&limit=100`;
+export async function fetchMissions(archived = false) {
+  // On récupère les missions filtrées par statut d'archivage
+  const where = `(est_archivee,${archived ? 'checked' : 'notchecked'})`;
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records?sort=date_debut&where=${where}&limit=100`;
   try {
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error("Erreur lors de la récupération des missions");

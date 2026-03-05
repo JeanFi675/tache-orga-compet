@@ -272,6 +272,7 @@ function renderDashboard() {
         <div class="mission-top-bar">
           <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none;">${mission.titre || 'Sans titre'}</h2>
           <div class="mission-actions">
+            <button class="btn-icon mission-archive" data-id="${mission.Id}" title="Archiver la mission">📦</button>
             <button class="btn-icon mission-edit" data-id="${mission.Id}" title="Modifier la mission">✏️</button>
             <button class="btn-icon mission-delete" data-id="${mission.Id}" title="Supprimer la mission">🗑️</button>
           </div>
@@ -419,6 +420,25 @@ function renderDashboard() {
       const missionId = e.target.closest('.mission-delete').dataset.id;
       progressCounter.innerText = 'Suppression...';
       const success = await deleteMission(missionId);
+      if(success) {
+        missionsData = missionsData.filter(m => m.Id != missionId);
+        tachesData = tachesData.filter(t => t.missions_id != missionId);
+        populateDateFilter();
+        renderDashboard();
+      } else {
+        alert("Erreur");
+        progressCounter.innerText = 'Erreur';
+      }
+    });
+  });
+
+  // Attach Archive Mission Event
+  document.querySelectorAll('.mission-archive').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      if(!confirm("Archiver cette mission ? Elle n'apparaîtra plus sur cette page.")) return;
+      const missionId = e.target.closest('.mission-archive').dataset.id;
+      progressCounter.innerText = 'Archivage...';
+      const success = await updateMission(missionId, { est_archivee: true });
       if(success) {
         missionsData = missionsData.filter(m => m.Id != missionId);
         tachesData = tachesData.filter(t => t.missions_id != missionId);
