@@ -36,8 +36,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_NOCODB_TOKEN: ${{ secrets.VITE_NOCODB_TOKEN }}
-          VITE_GATEKEEPER_PASSWORD: ${{ secrets.VITE_GATEKEEPER_PASSWORD }}
+          VITE_NOCODB_TOKEN: ${{ secrets['VITE_NOCODB_TOKEN'] }}
+          VITE_GATEKEEPER_PASSWORD: ${{ secrets['VITE_GATEKEEPER_PASSWORD'] }}
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
