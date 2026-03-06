@@ -26,7 +26,7 @@ const container = document.getElementById("missions-container");
 const progressCounter = document.getElementById("progress-counter");
 const filterReferent = document.getElementById("filter-referent");
 const filterStatus = document.getElementById("filter-status");
-const filterDate = document.getElementById("filter-date");
+const filterPhase = document.getElementById("filter-phase");
 
 const modal = document.getElementById("add-task-modal");
 const inputTaskTitle = document.getElementById("new-task-title");
@@ -63,6 +63,10 @@ const btnCloseAssignMission = document.getElementById(
 const inputNewReferentName = document.getElementById("new-referent-name");
 const btnAddReferent = document.getElementById("btn-add-referent");
 
+const missionPhaseSelect = document.getElementById("mission-phase-select");
+const newPhaseInput = document.getElementById("new-phase-input");
+const btnToggleNewPhase = document.getElementById("btn-toggle-new-phase");
+
 export async function initDashboard() {
   container.innerHTML =
     '<p style="font-size: 1.5rem; font-weight: bold; animation: blink 1s infinite alternate;">Chargement brutal...</p>';
@@ -95,9 +99,9 @@ export async function initDashboard() {
     });
     await Promise.all(missionRefPromises);
 
-    // 4. Populate Referees & Dates Filters
+    // 4. Populate Referees & Phase Filters
     populateReferentFilter();
-    populateDateFilter();
+    populatePhaseFilter();
 
     // 5. Render
     console.log("Debug Missions Data:", missionsData);
@@ -107,7 +111,7 @@ export async function initDashboard() {
     // 5. Attach Filter Events
     filterReferent.addEventListener("change", renderDashboard);
     filterStatus.addEventListener("change", renderDashboard);
-    filterDate.addEventListener("change", renderDashboard);
+    filterPhase.addEventListener("change", renderDashboard);
 
     // 6. Attach Modal Events
     btnCancelTask.addEventListener("click", closeModal);
@@ -132,6 +136,19 @@ export async function initDashboard() {
       addMissionModal.classList.add("hidden"),
     );
     btnSaveMission.addEventListener("click", handleCreateMission);
+
+    btnToggleNewPhase.addEventListener("click", () => {
+      if (newPhaseInput.style.display === "none") {
+        newPhaseInput.style.display = "block";
+        missionPhaseSelect.style.display = "none";
+        btnToggleNewPhase.textContent = "-";
+      } else {
+        newPhaseInput.style.display = "none";
+        missionPhaseSelect.style.display = "block";
+        btnToggleNewPhase.textContent = "+";
+        newPhaseInput.value = "";
+      }
+    });
 
     btnCloseAssignMission.addEventListener("click", () =>
       assignMissionModal.classList.add("hidden"),
@@ -162,33 +179,30 @@ function populateReferentFilter() {
   });
 }
 
-function populateDateFilter() {
+function populatePhaseFilter() {
   // Clear current options first (except default)
-  while (filterDate.options.length > 1) filterDate.remove(1);
+  while (filterPhase.options.length > 1) filterPhase.remove(1);
+  
+  // Clear modal select options too (except default)
+  while (missionPhaseSelect.options.length > 1) missionPhaseSelect.remove(1);
 
-  // Extract unique start dates (with time) from missionsData
-  const uniqueDateTimes = [
-    ...new Set(missionsData.map((m) => m.date_debut).filter((d) => d !== null)),
+  // Extract unique phases from missionsData
+  const uniquePhases = [
+    ...new Set(missionsData.map((m) => m.phase).filter((p) => p && p.trim() !== "")),
   ].sort();
 
-  uniqueDateTimes.forEach((dtStr) => {
-    const d = new Date(dtStr);
-    const label =
-      d.toLocaleDateString("fr-FR", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      }) +
-      " " +
-      d.toLocaleTimeString("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
+  uniquePhases.forEach((phase) => {
+    // Add to dashboard filter
     const opt = document.createElement("option");
-    opt.value = dtStr;
-    opt.textContent = label;
-    filterDate.appendChild(opt);
+    opt.value = phase;
+    opt.textContent = phase;
+    filterPhase.appendChild(opt);
+
+    // Add to mission modal select
+    const optModal = document.createElement("option");
+    optModal.value = phase;
+    optModal.textContent = phase;
+    missionPhaseSelect.appendChild(optModal);
   });
 }
 
@@ -234,7 +248,7 @@ function getMissionAssigneesNames(referentIds) {
 function renderDashboard() {
   const selectedRef = filterReferent.value;
   const selectedStatus = filterStatus.value;
-  const selectedDate = filterDate.value;
+  const selectedPhase = filterPhase.value;
 
   let totalTasks = 0;
   let completedTasks = 0;
@@ -242,9 +256,9 @@ function renderDashboard() {
   container.innerHTML = "";
 
   missionsData.forEach((mission) => {
-    // Apply Date Filter to Mission
-    if (selectedDate) {
-      if (mission.date_debut !== selectedDate) return;
+    // Apply Phase Filter to Mission
+    if (selectedPhase !== "ALL") {
+      if (mission.phase !== selectedPhase) return;
     }
 
     // Get tasks for this mission
@@ -385,7 +399,10 @@ function renderDashboard() {
     card.innerHTML = `
       <div class="mission-header">
         <div class="mission-top-bar">
-          <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none;">${mission.titre || "Sans titre"}</h2>
+          <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+            <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none; margin-bottom: 0;">${mission.titre || "Sans titre"}</h2>
+            ${mission.phase ? `<span class="phase-badge">${mission.phase}</span>` : ""}
+          </div>
           <div class="mission-actions">
             <button class="btn-icon mission-archive" data-id="${mission.Id}" title="Archiver la mission">📦</button>
             <button class="btn-icon mission-edit" data-id="${mission.Id}" title="Modifier la mission">✏️</button>
@@ -590,7 +607,7 @@ function renderDashboard() {
         const idInt = parseInt(missionId);
         missionsData = missionsData.filter((m) => m.Id != idInt);
         tachesData = tachesData.filter((t) => t.missions_id != idInt);
-        populateDateFilter();
+        populatePhaseFilter();
         renderDashboard();
       } else {
         alert("Erreur");
@@ -614,7 +631,7 @@ function renderDashboard() {
       if (success) {
         missionsData = missionsData.filter((m) => m.Id != missionId);
         tachesData = tachesData.filter((t) => t.missions_id != missionId);
-        populateDateFilter();
+        populatePhaseFilter();
         renderDashboard();
       } else {
         alert("Erreur");
@@ -682,6 +699,14 @@ function openEditMissionModal(missionId) {
   }
 
   addMissionModal.classList.remove("hidden");
+  
+  // Phase handling
+  newPhaseInput.style.display = "none";
+  missionPhaseSelect.style.display = "block";
+  btnToggleNewPhase.textContent = "+";
+  newPhaseInput.value = "";
+  missionPhaseSelect.value = mission.phase || "";
+
   inputMissionTitle.focus();
 }
 
@@ -778,35 +803,41 @@ async function handleCreateMission() {
   }
 
   if (isEditing) {
-    const success = await updateMission(editingMissionId, {
-      titre,
-      date_debut: dateDebutISO,
-      date_fin: dateFinISO,
-    });
-    if (success) {
-      const m = missionsData.find((x) => x.Id == editingMissionId);
-      if (m) {
-        m.titre = titre;
-        m.date_debut = dateDebutISO;
-        m.date_fin = dateFinISO;
-      }
-      renderDashboard();
-      addMissionModal.classList.add("hidden");
+      const phase = newPhaseInput.style.display === "block" ? newPhaseInput.value.trim() : missionPhaseSelect.value;
+
+      const success = await updateMission(editingMissionId, {
+        titre,
+        date_debut: dateDebutISO,
+        date_fin: dateFinISO,
+        phase: phase || null,
+      });
+      if (success) {
+        const m = missionsData.find((x) => x.Id == editingMissionId);
+        if (m) {
+          m.titre = titre;
+          m.date_debut = dateDebutISO;
+          m.date_fin = dateFinISO;
+          m.phase = phase || null;
+        }
+        populatePhaseFilter();
+        renderDashboard();
+        addMissionModal.classList.add("hidden");
     } else {
       alert("Erreur lors de la modification");
     }
-  } else {
-    const newMission = await createMission(titre, dateDebutISO, dateFinISO);
-    if (newMission) {
-      // Manual augmentation because API might return only Id
-      newMission.titre = titre;
-      newMission.date_debut = dateDebutISO;
-      newMission.date_fin = dateFinISO;
-
-      missionsData.push(newMission);
-      populateDateFilter();
-      renderDashboard();
-      addMissionModal.classList.add("hidden");
+    } else {
+      const phase = newPhaseInput.style.display === "block" ? newPhaseInput.value.trim() : missionPhaseSelect.value;
+      const newMission = await createMission(titre, dateDebutISO, dateFinISO, phase || null);
+      if (newMission) {
+        newMission.titre = titre;
+        newMission.date_debut = dateDebutISO;
+        newMission.date_fin = dateFinISO;
+        newMission.phase = phase || null;
+        newMission.Referents_Assignes = [];
+        missionsData.push(newMission);
+        populatePhaseFilter();
+        renderDashboard();
+        addMissionModal.classList.add("hidden");
     } else {
       alert("Erreur réseau");
     }

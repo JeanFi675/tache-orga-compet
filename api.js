@@ -197,7 +197,7 @@ export async function deleteTache(tacheId) {
 /**
  * Crée une nouvelle mission
  */
-export async function createMission(titre, date_debut, date_fin) {
+export async function createMission(titre, date_debut, date_fin, phase = null) {
   const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records`;
   try {
     const res = await fetch(url, {
@@ -207,7 +207,8 @@ export async function createMission(titre, date_debut, date_fin) {
         {
           titre: titre,
           date_debut: date_debut || null,
-          date_fin: date_fin || null
+          date_fin: date_fin || null,
+          phase: phase || null
         }
       ])
     });

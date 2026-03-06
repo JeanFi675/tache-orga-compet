@@ -248,6 +248,19 @@ input[type="date"].select-brutal {
   text-transform: uppercase;
 }
 
+.phase-badge {
+  background-color: #ffd966; /* Jaune brutal */
+  color: #000;
+  border: var(--border-thin);
+  padding: 0.1rem 0.5rem;
+  font-weight: 900;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  display: inline-block;
+  margin-top: 0.4rem;
+  box-shadow: 2px 2px 0px 0px var(--color-black);
+}
+
 /* Tasks inside Mission */
 .task-list {
   list-style: none;

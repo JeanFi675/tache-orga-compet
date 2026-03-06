@@ -82,8 +82,8 @@
           <option value="INCOMPLETE">À faire</option>
           <option value="COMPLETED">Terminées</option>
         </select>
-        <select id="filter-date" class="select-brutal">
-          <option value="">Date / Heure</option>
+        <select id="filter-phase" class="select-brutal">
+          <option value="ALL">Phase</option>
           <!-- Loaded dynamically -->
         </select>
       </div>
@@ -202,6 +202,27 @@
               class="input-brutal"
               style="width: 100%"
             />
+          </div>
+        </div>
+        <div style="margin-top: 1rem">
+          <label
+            for="mission-phase-select"
+            style="display: block; font-weight: bold; margin-bottom: 0.2rem"
+            >Phase</label
+          >
+          <div style="display: flex; gap: 0.5rem">
+            <select id="mission-phase-select" class="select-brutal" style="flex: 1">
+              <option value="">-- Sélectionner ou ajouter --</option>
+              <!-- Loaded dynamically -->
+            </select>
+            <input
+              type="text"
+              id="new-phase-input"
+              class="input-brutal"
+              placeholder="Nouvelle phase..."
+              style="flex: 1; display: none"
+            />
+            <button id="btn-toggle-new-phase" class="btn-brutal" style="padding: 0 0.5rem" title="Ajouter une nouvelle phase">+</button>
           </div>
         </div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
