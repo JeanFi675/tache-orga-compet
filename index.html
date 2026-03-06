@@ -42,10 +42,32 @@
 
     <!-- DASHBOARD VIEW -->
     <div id="dashboard-view" class="container hidden">
-      <div id="dashboard-header" style="align-items: center; justify-content: space-between; display: flex;">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <img src="logo-championnat-france-2026.svg" alt="Championnat de France 2026" class="logo-header" />
-          <a href="archive.html" class="btn-brutal" style="font-size: 0.8rem; padding: 0.3rem 0.8rem; background-color: var(--color-ice); text-decoration: none; color: black;">Voir les Archives</a>
+      <div
+        id="dashboard-header"
+        style="
+          align-items: center;
+          justify-content: space-between;
+          display: flex;
+        "
+      >
+        <div style="display: flex; align-items: center; gap: 1rem">
+          <img
+            src="logo-championnat-france-2026.svg"
+            alt="Championnat de France 2026"
+            class="logo-header"
+          />
+          <a
+            href="archive.html"
+            class="btn-brutal"
+            style="
+              font-size: 0.8rem;
+              padding: 0.3rem 0.8rem;
+              background-color: var(--color-ice);
+              text-decoration: none;
+              color: black;
+            "
+            >Voir les Archives</a
+          >
         </div>
         <div class="counter-brutal" id="progress-counter">0 / 0 Terminées</div>
       </div>
@@ -83,9 +105,13 @@
     <div id="add-task-modal" class="brutal-modal hidden">
       <div class="brutal-modal-content">
         <h2 id="task-modal-title">Nouvelle Tâche</h2>
-        
+
         <div>
-          <label for="new-task-title" style="display: block; font-weight: bold; margin-bottom: 0.2rem;">Titre de la tâche</label>
+          <label
+            for="new-task-title"
+            style="display: block; font-weight: bold; margin-bottom: 0.2rem"
+            >Titre de la tâche</label
+          >
           <input
             type="text"
             id="new-task-title"
@@ -95,7 +121,11 @@
         </div>
 
         <div>
-          <label for="new-task-referent-id" style="display: block; font-weight: bold; margin-bottom: 0.2rem;">Référent assigné</label>
+          <label
+            for="new-task-referent-id"
+            style="display: block; font-weight: bold; margin-bottom: 0.2rem"
+            >Référent assigné</label
+          >
           <select
             id="new-task-referent-id"
             class="select-brutal"
@@ -107,8 +137,8 @@
         </div>
 
         <input type="hidden" id="new-task-mission-id" />
-        
-        <div style="display: flex; gap: 1rem;">
+
+        <div style="display: flex; gap: 1rem">
           <button id="btn-save-task" class="btn-brutal" style="flex: 1">
             Ajouter
           </button>
@@ -133,18 +163,45 @@
           class="input-brutal"
           placeholder="Titre de la mission"
         />
-        <div style="margin-top: 1rem;">
-          <label for="new-mission-date" style="display: block; font-weight: bold; margin-bottom: 0.2rem;">Date</label>
-          <input type="date" id="new-mission-date" class="input-brutal" style="width: 100%;" />
+        <div style="margin-top: 1rem">
+          <label
+            for="new-mission-date"
+            style="display: block; font-weight: bold; margin-bottom: 0.2rem"
+            >Date</label
+          >
+          <input
+            type="date"
+            id="new-mission-date"
+            class="input-brutal"
+            style="width: 100%"
+          />
         </div>
-        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-          <div style="flex: 1;">
-            <label for="new-mission-time-debut" style="display: block; font-weight: bold; margin-bottom: 0.2rem;">Heure début</label>
-            <input type="time" id="new-mission-time-debut" class="input-brutal" style="width: 100%;" />
+        <div style="display: flex; gap: 1rem; margin-top: 1rem">
+          <div style="flex: 1">
+            <label
+              for="new-mission-time-debut"
+              style="display: block; font-weight: bold; margin-bottom: 0.2rem"
+              >Heure début</label
+            >
+            <input
+              type="time"
+              id="new-mission-time-debut"
+              class="input-brutal"
+              style="width: 100%"
+            />
           </div>
-          <div style="flex: 1;">
-            <label for="new-mission-time-fin" style="display: block; font-weight: bold; margin-bottom: 0.2rem;">Heure fin</label>
-            <input type="time" id="new-mission-time-fin" class="input-brutal" style="width: 100%;" />
+          <div style="flex: 1">
+            <label
+              for="new-mission-time-fin"
+              style="display: block; font-weight: bold; margin-bottom: 0.2rem"
+              >Heure fin</label
+            >
+            <input
+              type="time"
+              id="new-mission-time-fin"
+              class="input-brutal"
+              style="width: 100%"
+            />
           </div>
         </div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
@@ -166,9 +223,21 @@
     <div id="assign-mission-modal" class="brutal-modal hidden">
       <div class="brutal-modal-content">
         <h2>Gérer l'équipe</h2>
-        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-          <input type="text" id="new-referent-name" class="input-brutal" placeholder="Nouveau référent (ex: Alice)" style="flex: 1; margin: 0; font-size: 0.9rem;" />
-          <button id="btn-add-referent" class="btn-brutal" style="padding: 0.5rem 1rem;">Ajouter</button>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem">
+          <input
+            type="text"
+            id="new-referent-name"
+            class="input-brutal"
+            placeholder="Nouveau référent (ex: Alice)"
+            style="flex: 1; margin: 0; font-size: 0.9rem"
+          />
+          <button
+            id="btn-add-referent"
+            class="btn-brutal"
+            style="padding: 0.5rem 1rem"
+          >
+            Ajouter
+          </button>
         </div>
         <div
           id="assign-mission-list"
@@ -194,7 +263,32 @@
       </div>
     </div>
 
+    <!-- FICHE TASK MODAL -->
+    <div id="fiche-task-modal" class="brutal-modal hidden">
+      <div class="brutal-modal-content" style="max-width: 800px; width: 90%;">
+        <h2>Fiche de la tâche</h2>
+        <div style="margin-top: 1rem;">
+          <div
+            id="task-fiche-content"
+            class="input-brutal"
+            style="width: 100%; min-height: 200px; max-height: 60vh; overflow-y: auto; margin: 0; padding: 1rem; line-height: 1.5; background-color: var(--color-light); white-space: pre-wrap; font-size: 0.85rem;"
+          ></div>
+        </div>
+        <input type="hidden" id="fiche-task-id" />
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+          <button
+            id="btn-cancel-fiche"
+            class="btn-brutal"
+            style="flex: 1; background-color: var(--color-ice)"
+          >
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script type="module" src="./main.js"></script>
   </body>
 </html>
