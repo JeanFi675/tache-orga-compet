@@ -313,6 +313,16 @@ function renderDashboard() {
     const card = document.createElement("div");
     card.className = "mission-card";
 
+    // Logic for dynamic background colors
+    const isNoReferent = !mission.Referents_Assignes || mission.Referents_Assignes.length === 0;
+    const isAllCompleted = baseTasks.length > 0 && baseTasks.every(t => t.est_terminee);
+
+    if (isNoReferent) {
+      card.classList.add("mission-no-referent");
+    } else if (isAllCompleted) {
+      card.classList.add("mission-all-completed");
+    }
+
     const assignees = getMissionAssigneesNames(mission.Referents_Assignes);
 
     // Formatting date range

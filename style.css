@@ -213,6 +213,14 @@ input[type="date"].select-brutal {
   transition: transform 0.2s ease;
 }
 
+.mission-card.mission-no-referent {
+  background-color: #ffcccb; /* Rouge pastel brutal */
+}
+
+.mission-card.mission-all-completed {
+  background-color: #d1f7d1; /* Vert pastel brutal */
+}
+
 .mission-header {
   border-bottom: var(--border-thin);
   padding-bottom: 1rem;
