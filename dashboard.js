@@ -850,6 +850,17 @@ async function handleAddReferent() {
   const nom = inputNewReferentName.value.trim();
   if (!nom) return;
 
+  // Vérification d'unicité (insensible à la casse et sans espaces superflus)
+  const exists = referentsData.some(
+    (ref) => ref.nom.trim().toLowerCase() === nom.toLowerCase(),
+  );
+
+  if (exists) {
+    alert("Ce référent existe déjà (le nom doit être unique)");
+    inputNewReferentName.value = "";
+    return;
+  }
+
   btnAddReferent.disabled = true;
   btnAddReferent.textContent = "...";
 
