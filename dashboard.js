@@ -796,10 +796,12 @@ async function handleCreateMission() {
   let dateFinISO = null;
 
   if (devDate && devTimeDebut) {
-    dateDebutISO = `${devDate}T${devTimeDebut}:00`;
+    // Créer un objet Date local puis l'envoyer en ISO UTC
+    dateDebutISO = new Date(`${devDate}T${devTimeDebut}:00`).toISOString();
   }
   if (devDate && devTimeFin) {
-    dateFinISO = `${devDate}T${devTimeFin}:00`;
+    // Créer un objet Date local puis l'envoyer en ISO UTC
+    dateFinISO = new Date(`${devDate}T${devTimeFin}:00`).toISOString();
   }
 
   if (isEditing) {
