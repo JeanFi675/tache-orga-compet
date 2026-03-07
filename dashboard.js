@@ -46,10 +46,19 @@ const btnCancelMission = document.getElementById("btn-cancel-mission");
 const missionModalTitle = document.getElementById("mission-modal-title");
 const taskModalTitle = document.getElementById("task-modal-title");
 
+const timeInputsContainer = document.getElementById("time-inputs-container");
+const lblMissionDate = document.getElementById("lbl-mission-date");
+
 const ficheModal = document.getElementById("fiche-task-modal");
 const inputFicheContent = document.getElementById("task-fiche-content");
 const inputFicheTaskId = document.getElementById("fiche-task-id");
 const btnCancelFiche = document.getElementById("btn-cancel-fiche");
+
+const editMissionFicheModal = document.getElementById("edit-mission-fiche-modal");
+const inputEditMissionFicheId = document.getElementById("edit-mission-fiche-id");
+const btnSaveMissionFiche = document.getElementById("btn-save-mission-fiche");
+const btnCancelMissionFiche = document.getElementById("btn-cancel-mission-fiche");
+let missionFicheQuill = null;
 
 let editingMissionId = null;
 let editingTaskId = null;
@@ -113,6 +122,21 @@ export async function initDashboard() {
     filterStatus.addEventListener("change", renderDashboard);
     filterPhase.addEventListener("change", renderDashboard);
 
+    // Initialisation Quill JS
+    if (typeof Quill !== "undefined" && !missionFicheQuill) {
+      missionFicheQuill = new Quill('#quill-editor', {
+        theme: 'snow',
+        modules: {
+          toolbar: [
+            [{ 'header': [1, 2, false] }],
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['clean']
+          ]
+        }
+      });
+    }
+
     // 6. Attach Modal Events
     btnCancelTask.addEventListener("click", closeModal);
     btnSaveTask.addEventListener("click", handleCreateTask);
@@ -120,6 +144,11 @@ export async function initDashboard() {
     btnCancelFiche.addEventListener("click", () =>
       ficheModal.classList.add("hidden"),
     );
+
+    btnCancelMissionFiche.addEventListener("click", () =>
+      editMissionFicheModal.classList.add("hidden"),
+    );
+    btnSaveMissionFiche.addEventListener("click", handleSaveMissionFiche);
 
     btnOpenAddMission.addEventListener("click", () => {
       editingMissionId = null;
@@ -129,9 +158,31 @@ export async function initDashboard() {
       inputMissionDate.value = "";
       inputMissionTimeDebut.value = "";
       inputMissionTimeFin.value = "";
+      
+      // Reset radio buttons to 'taches'
+      const radioTaches = document.querySelector('input[name="mission-type"][value="taches"]');
+      if (radioTaches) radioTaches.checked = true;
+      timeInputsContainer.style.display = "flex";
+      lblMissionDate.textContent = "Date";
+
       addMissionModal.classList.remove("hidden");
       inputMissionTitle.focus();
     });
+
+    document.querySelectorAll('input[name="mission-type"]').forEach((radio) => {
+      radio.addEventListener("change", (e) => {
+        if (e.target.value === "fiche") {
+          timeInputsContainer.style.display = "none";
+          lblMissionDate.textContent = "Date d'échéance";
+          inputMissionTimeDebut.value = "";
+          inputMissionTimeFin.value = "";
+        } else {
+          timeInputsContainer.style.display = "flex";
+          lblMissionDate.textContent = "Date";
+        }
+      });
+    });
+
     btnCancelMission.addEventListener("click", () =>
       addMissionModal.classList.add("hidden"),
     );
@@ -344,6 +395,7 @@ function renderDashboard() {
     const endDate = mission.date_fin ? new Date(mission.date_fin) : null;
 
     let displayDate = "Date inconnue";
+    let isFicheFormat = !!mission.fiche;
 
     if (startDate) {
       const dayStr = startDate.toLocaleDateString("fr-FR", {
@@ -356,14 +408,18 @@ function renderDashboard() {
         minute: "2-digit",
       });
 
-      if (endDate) {
-        const endTime = endDate.toLocaleTimeString("fr-FR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-        displayDate = `${dayStr} ${startTime} - ${endTime}`;
+      if (isFicheFormat) {
+          displayDate = `${dayStr}`;
       } else {
-        displayDate = `${dayStr} ${startTime}`;
+          if (endDate) {
+            const endTime = endDate.toLocaleTimeString("fr-FR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            displayDate = `${dayStr} ${startTime} - ${endTime}`;
+          } else {
+            displayDate = `${dayStr} ${startTime}`;
+          }
       }
     }
 
@@ -411,7 +467,7 @@ function renderDashboard() {
         </div>
         <div class="mission-info-grid">
           <div class="info-item">
-            <span class="info-label">📅 Date</span>
+            <span class="info-label">${isFicheFormat ? '⏳ Échéance' : '📅 Date'}</span>
             <span class="info-value">${displayDate}</span>
           </div>
           <div class="info-item">
@@ -423,10 +479,17 @@ function renderDashboard() {
           </div>
         </div>
       </div>
-      <ul class="task-list">
-        ${tasksHTML || '<li><em style="color:#777">Aucune tâche visible...</em></li>'}
-      </ul>
-      <button class="btn-add-task" data-mission="${mission.Id}">+ Ajouter une tâche</button>
+      ${mission.fiche ? `
+        <div class="mission-fiche-preview" style="margin-top: 1rem; padding: 1rem; background-color: var(--color-light); border: 2px solid var(--color-dark); font-size: 0.9rem;">
+          ${mission.fiche}
+        </div>
+        <button class="btn-brutal mission-edit-fiche" data-id="${mission.Id}" style="margin-top: 0.5rem; width: 100%; background-color: var(--color-ice);">📝 Éditer la fiche</button>
+      ` : `
+        <ul class="task-list">
+          ${tasksHTML || '<li><em style="color:#777">Aucune tâche visible...</em></li>'}
+        </ul>
+        <button class="btn-add-task" data-mission="${mission.Id}">+ Ajouter une tâche</button>
+      `}
     `;
 
     container.appendChild(card);
@@ -552,6 +615,12 @@ function renderDashboard() {
       taskModalTitle.textContent = "Nouvelle Tâche";
       btnSaveTask.textContent = "Ajouter";
       openTaskModal(e.target.dataset.mission);
+    });
+  });
+
+  document.querySelectorAll(".mission-edit-fiche").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      openEditMissionFicheModal(e.target.dataset.id);
     });
   });
 
@@ -698,6 +767,21 @@ function openEditMissionModal(missionId) {
     inputMissionTimeFin.value = "";
   }
 
+  // Set radio based on fiche presence and visibility of time container
+  const isFiche = !!mission.fiche;
+  const radioFiche = document.querySelector('input[name="mission-type"][value="fiche"]');
+  const radioTaches = document.querySelector('input[name="mission-type"][value="taches"]');
+  
+  if (isFiche) {
+    if (radioFiche) radioFiche.checked = true;
+    timeInputsContainer.style.display = "none";
+    lblMissionDate.textContent = "Date d'échéance";
+  } else {
+    if (radioTaches) radioTaches.checked = true;
+    timeInputsContainer.style.display = "flex";
+    lblMissionDate.textContent = "Date";
+  }
+
   addMissionModal.classList.remove("hidden");
   
   // Phase handling
@@ -829,12 +913,18 @@ async function handleCreateMission() {
     }
     } else {
       const phase = newPhaseInput.style.display === "block" ? newPhaseInput.value.trim() : missionPhaseSelect.value;
-      const newMission = await createMission(titre, dateDebutISO, dateFinISO, phase || null);
+      
+      const typeRadio = document.querySelector('input[name="mission-type"]:checked');
+      const isFiche = typeRadio && typeRadio.value === "fiche";
+      const ficheContent = isFiche ? "<p>Ajouter votre texte</p>" : null;
+
+      const newMission = await createMission(titre, dateDebutISO, dateFinISO, phase || null, ficheContent);
       if (newMission) {
         newMission.titre = titre;
         newMission.date_debut = dateDebutISO;
         newMission.date_fin = dateFinISO;
         newMission.phase = phase || null;
+        newMission.fiche = ficheContent;
         newMission.Referents_Assignes = [];
         missionsData.push(newMission);
         populatePhaseFilter();
@@ -846,6 +936,49 @@ async function handleCreateMission() {
   }
   btnSaveMission.textContent = "Ajouter";
   btnSaveMission.disabled = false;
+}
+
+function openEditMissionFicheModal(missionId) {
+  const mission = missionsData.find((m) => m.Id == missionId);
+  if (!mission) return;
+
+  inputEditMissionFicheId.value = missionId;
+  
+  if (missionFicheQuill) {
+    // Si la fiche n'est pas vide on set, sinon on set vide (même si par défaut ça devrait être Ajouter votre texte)
+    missionFicheQuill.clipboard.dangerouslyPasteHTML(mission.fiche || "");
+  }
+
+  editMissionFicheModal.classList.remove("hidden");
+}
+
+async function handleSaveMissionFiche() {
+  const missionId = inputEditMissionFicheId.value;
+  if (!missionId) return;
+
+  let newFicheContent = "";
+  if (missionFicheQuill) {
+    newFicheContent = missionFicheQuill.root.innerHTML;
+  }
+
+  btnSaveMissionFiche.textContent = "Enregistrement...";
+  btnSaveMissionFiche.disabled = true;
+
+  const m = missionsData.find((x) => x.Id == missionId);
+  const success = await updateMission(missionId, { fiche: newFicheContent });
+  
+  if (success) {
+    if (m) {
+      m.fiche = newFicheContent;
+    }
+    renderDashboard();
+    editMissionFicheModal.classList.add("hidden");
+  } else {
+    alert("Erreur lors de l'enregistrement de la fiche.");
+  }
+  
+  btnSaveMissionFiche.textContent = "Enregistrer";
+  btnSaveMissionFiche.disabled = false;
 }
 
 async function handleAddReferent() {
