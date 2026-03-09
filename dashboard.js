@@ -428,6 +428,8 @@ function renderDashboard() {
     // Render Mission Card
     const card = document.createElement("div");
     card.className = "mission-card";
+    card.dataset.missionId = mission.Id;
+    card.id = `mission-card-${mission.Id}`;
 
     // Logic for dynamic background colors
     const isNoReferent = !mission.Referents_Assignes || mission.Referents_Assignes.length === 0;
@@ -996,10 +998,35 @@ async function handleCreateMission() {
         newMission.fiche = ficheContent;
         newMission.Referents_Assignes = [];
         missionsData.push(newMission);
+        
+        // On trie pour que la mission prenne sa place chronologique
+        missionsData.sort((a, b) => {
+          const dateA = a.date_debut ? new Date(a.date_debut).getTime() : Infinity;
+          const dateB = b.date_debut ? new Date(b.date_debut).getTime() : Infinity;
+          return dateA - dateB;
+        });
+
         populatePhaseFilter();
         populatePoleFilter();
         renderDashboard();
         addMissionModal.classList.add("hidden");
+
+        // On scroll vers la nouvelle carte
+        setTimeout(() => {
+          const newCard = document.getElementById(`mission-card-${newMission.Id}`);
+          if (newCard) {
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Animation flash simple
+            newCard.style.transition = 'box-shadow 0.4s ease, transform 0.4s ease';
+            newCard.style.boxShadow = '0 0 0 5px var(--color-dark)';
+            newCard.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+              newCard.style.boxShadow = '';
+              newCard.style.transform = '';
+              setTimeout(() => { newCard.style.transition = ''; }, 400);
+            }, 800);
+          }
+        }, 150);
     } else {
       alert("Erreur réseau");
     }
