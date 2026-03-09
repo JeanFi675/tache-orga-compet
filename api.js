@@ -197,7 +197,7 @@ export async function deleteTache(tacheId) {
 /**
  * Crée une nouvelle mission
  */
-export async function createMission(titre, date_debut, date_fin, phase = null, fiche = null) {
+export async function createMission(titre, date_debut, date_fin, phase = null, fiche = null, pole = null) {
   const url = `${NOCODB_URL}/api/v2/tables/${TABLE_MISSIONS}/records`;
   try {
     const res = await fetch(url, {
@@ -209,7 +209,8 @@ export async function createMission(titre, date_debut, date_fin, phase = null, f
           date_debut: date_debut || null,
           date_fin: date_fin || null,
           phase: phase || null,
-          fiche: fiche || null
+          fiche: fiche || null,
+          pole: pole || null
         }
       ])
     });
@@ -221,6 +222,7 @@ export async function createMission(titre, date_debut, date_fin, phase = null, f
     createdMission.date_debut = createdMission.date_debut || date_debut;
     createdMission.date_fin = createdMission.date_fin || date_fin;
     createdMission.fiche = createdMission.fiche || fiche;
+    createdMission.pole = createdMission.pole || pole;
     return createdMission;
   } catch (error) {
 
