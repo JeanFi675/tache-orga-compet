@@ -119,8 +119,6 @@ export async function initDashboard() {
     populatePoleFilter();
 
     // 5. Render
-    console.log("Debug Missions Data:", missionsData);
-    console.log("Debug Referents Data:", referentsData);
     renderDashboard();
 
     // 5. Attach Filter Events
