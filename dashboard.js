@@ -835,7 +835,11 @@ function openEditMissionModal(missionId) {
 
   if (mission.date_debut) {
     const d = new Date(mission.date_debut);
-    inputMissionDate.value = d.toISOString().split("T")[0];
+    // Utiliser l'heure locale pour éviter le décalage UTC
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    inputMissionDate.value = `${year}-${month}-${day}`;
     inputMissionTimeDebut.value = d.toTimeString().slice(0, 5);
   } else {
     inputMissionDate.value = "";
@@ -968,9 +972,10 @@ async function handleCreateMission() {
   let dateDebutISO = null;
   let dateFinISO = null;
 
-  if (devDate && devTimeDebut) {
-    // Créer un objet Date local puis l'envoyer en ISO UTC
-    dateDebutISO = new Date(`${devDate}T${devTimeDebut}:00`).toISOString();
+  if (devDate) {
+    // Utiliser "00:00" par défaut si l'heure n'est pas spécifiée (ex: pour une fiche)
+    const timeDebut = devTimeDebut || "00:00";
+    dateDebutISO = new Date(`${devDate}T${timeDebut}:00`).toISOString();
   }
   if (devDate && devTimeFin) {
     // Créer un objet Date local puis l'envoyer en ISO UTC
