@@ -395,23 +395,27 @@ function renderDashboard() {
     let missionMatchesRef = false;
     let isMissionReferent = false;
 
+    // Find "Tout le monde" referent ID for special handling
+    const toutLeMondeRef = referentsData.find((r) => r.nom && r.nom.toLowerCase() === "tout le monde");
+    const toutLeMondeId = toutLeMondeRef ? toutLeMondeRef.Id : null;
+
     if (selectedRef === "ALL") {
       missionMatchesRef = true;
       isMissionReferent = true;
     } else {
       // Check if mission has the referee
       const missionRefs = mission.Referents_Assignes;
-      if (
-        Array.isArray(missionRefs) &&
-        missionRefs.find((r) => r.Id == selectedRef)
-      ) {
+      const hasSelectedRef = Array.isArray(missionRefs) && missionRefs.find((r) => r.Id == selectedRef);
+      const hasToutLeMonde = Array.isArray(missionRefs) && toutLeMondeId && missionRefs.find((r) => r.Id == toutLeMondeId);
+
+      if (hasSelectedRef || hasToutLeMonde) {
         missionMatchesRef = true;
         isMissionReferent = true; // Mène à compter TOUTES les tâches
       }
 
       if (!missionMatchesRef) {
-        // Le référent n'est assigné qu'à des tâches spécifiques, on ne compte que celles-ci
-        relevantTasks = baseTasks.filter((t) => t.referents_id == selectedRef);
+        // Le référent n'est assigné qu'à des tâches spécifiques (ou "Tout le monde"), on ne compte que celles-ci
+        relevantTasks = baseTasks.filter((t) => t.referents_id == selectedRef || (toutLeMondeId && t.referents_id == toutLeMondeId));
         if (relevantTasks.length > 0) {
           missionMatchesRef = true;
         }
