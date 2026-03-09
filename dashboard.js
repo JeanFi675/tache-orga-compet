@@ -231,6 +231,9 @@ export async function initDashboard() {
 }
 
 function populateReferentFilter() {
+  // Sauvegarder la sélection actuelle
+  const currentSelection = filterReferent.value;
+
   // Clear current options first (except the first one)
   while (filterReferent.options.length > 1) filterReferent.remove(1);
   while (inputTaskReferentId.options.length > 1) inputTaskReferentId.remove(1);
@@ -246,9 +249,17 @@ function populateReferentFilter() {
     optTask.textContent = ref.nom;
     inputTaskReferentId.appendChild(optTask);
   });
+
+  // Restaurer la sélection
+  if (currentSelection && currentSelection !== "ALL") {
+    filterReferent.value = currentSelection;
+  }
 }
 
 function populatePhaseFilter() {
+  // Sauvegarder la sélection actuelle
+  const currentSelection = filterPhase.value;
+
   // Clear current options first (except default)
   while (filterPhase.options.length > 1) filterPhase.remove(1);
   
@@ -273,9 +284,17 @@ function populatePhaseFilter() {
     optModal.textContent = phase;
     missionPhaseSelect.appendChild(optModal);
   });
+
+  // Restaurer la sélection
+  if (currentSelection && currentSelection !== "ALL") {
+    filterPhase.value = currentSelection;
+  }
 }
 
 function populatePoleFilter() {
+  // Sauvegarder la sélection actuelle
+  const currentSelection = filterPole.value;
+
   // Clear current options first (except default)
   while (filterPole.options.length > 1) filterPole.remove(1);
   
@@ -300,6 +319,11 @@ function populatePoleFilter() {
     optModal.textContent = pole;
     missionPoleSelect.appendChild(optModal);
   });
+
+  // Restaurer la sélection
+  if (currentSelection && currentSelection !== "ALL") {
+    filterPole.value = currentSelection;
+  }
 }
 
 function getTaskAssigneeName(referentIds) {
