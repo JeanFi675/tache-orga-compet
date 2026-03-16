@@ -15,6 +15,7 @@ import {
   updateReferent,
   fetchMissionReferents,
   bulkUpdateTaches,
+  createHistorique,
 } from "./api.js";
 
 let missionsData = [];
@@ -644,6 +645,7 @@ function renderDashboard() {
 
       // API call
       await updateTache(taskId, { est_terminee: newVal });
+      createHistorique(newVal ? `Tâche terminée : "${t?.titre || taskId}"` : `Tâche réouverte : "${t?.titre || taskId}"`);
 
       // Re-render (to update counter properly if it didn't match local data, etc.)
       renderDashboard();
@@ -666,9 +668,11 @@ function renderDashboard() {
       const newTitle = e.target.innerText.trim();
       const t = tachesData.find((x) => x.Id == taskId);
       if (t && t.titre !== newTitle && newTitle !== "") {
+        const oldTitle = t.titre;
         t.titre = newTitle;
         progressCounter.innerText = "Sauvegarde...";
         await updateTache(taskId, { titre: newTitle });
+        createHistorique(`Renommage de la tâche : "${oldTitle}" → "${newTitle}"`);
         renderDashboard();
       } else if (newTitle === "") {
         e.target.innerText = t.titre;
@@ -682,9 +686,11 @@ function renderDashboard() {
       const newTitle = e.target.innerText.trim();
       const m = missionsData.find((x) => x.Id == missionId);
       if (m && m.titre !== newTitle && newTitle !== "") {
+        const oldTitle = m.titre;
         m.titre = newTitle;
         progressCounter.innerText = "Sauvegarde...";
         await updateMission(missionId, { titre: newTitle });
+        createHistorique(`Renommage de la mission : "${oldTitle}" → "${newTitle}"`);
         renderDashboard();
       } else if (newTitle === "") {
         e.target.innerText = m.titre;
@@ -737,9 +743,11 @@ function renderDashboard() {
     btn.addEventListener("click", async (e) => {
       if (!confirm("Supprimer cette tâche ?")) return;
       const taskId = e.target.closest(".task-delete").dataset.id;
+      const taskToDelete = tachesData.find((t) => t.Id == taskId);
       progressCounter.innerText = "Suppression...";
       const success = await deleteTache(taskId);
       if (success) {
+        createHistorique(`Suppression de la tâche : "${taskToDelete?.titre || taskId}"`);
         tachesData = tachesData.filter((t) => t.Id != taskId);
         renderDashboard();
       } else {
@@ -754,9 +762,11 @@ function renderDashboard() {
     btn.addEventListener("click", async (e) => {
       if (!confirm("Supprimer cette mission et toutes ses tâches ?")) return;
       const missionId = e.target.closest(".mission-delete").dataset.id;
+      const missionToDelete = missionsData.find((m) => m.Id == missionId);
       progressCounter.innerText = "Suppression...";
       const success = await deleteMission(missionId);
       if (success) {
+        createHistorique(`Suppression de la mission : "${missionToDelete?.titre || missionId}"`);
         const idInt = parseInt(missionId);
         missionsData = missionsData.filter((m) => m.Id != idInt);
         tachesData = tachesData.filter((t) => t.missions_id != idInt);
@@ -780,9 +790,11 @@ function renderDashboard() {
       )
         return;
       const missionId = e.target.closest(".mission-archive").dataset.id;
+      const missionToArchive = missionsData.find((m) => m.Id == missionId);
       progressCounter.innerText = "Archivage...";
       const success = await updateMission(missionId, { est_archivee: true });
       if (success) {
+        createHistorique(`Archivage de la mission : "${missionToArchive?.titre || missionId}"`);
         missionsData = missionsData.filter((m) => m.Id != missionId);
         tachesData = tachesData.filter((t) => t.missions_id != missionId);
         populatePhaseFilter();
@@ -937,6 +949,7 @@ async function handleCreateTask() {
         t.titre = titre;
         t.referents_id = referentId ? parseInt(referentId) : null;
       }
+      createHistorique(`Modification de la tâche : "${titre}"`);
       renderDashboard();
       closeModal();
     } else {
@@ -949,6 +962,8 @@ async function handleCreateTask() {
       if (referentId) {
         newTask.referents_id = parseInt(referentId);
       }
+      const missionName = missionsData.find((m) => m.Id == missionId)?.titre || missionId;
+      createHistorique(`Création de la tâche : "${titre}" (mission : "${missionName}")`);
       tachesData.push(newTask);
       renderDashboard();
       closeModal();
@@ -1006,6 +1021,7 @@ async function handleCreateMission() {
           m.phase = phase || null;
           m.pole = pole || null;
         }
+        createHistorique(`Modification de la mission : "${titre}"`);
         populatePhaseFilter();
         populatePoleFilter();
         renderDashboard();
@@ -1030,6 +1046,7 @@ async function handleCreateMission() {
         newMission.pole = pole || null;
         newMission.fiche = ficheContent;
         newMission.Referents_Assignes = [];
+        createHistorique(`Création de la mission : "${titre}"`);
         missionsData.push(newMission);
         
         // On trie pour que la mission prenne sa place chronologique
@@ -1096,11 +1113,12 @@ async function handleSaveMissionFiche() {
 
   const m = missionsData.find((x) => x.Id == missionId);
   const success = await updateMission(missionId, { fiche: newFicheContent });
-  
+
   if (success) {
     if (m) {
       m.fiche = newFicheContent;
     }
+    createHistorique(`Modification de la fiche de la mission : "${m?.titre || missionId}"`);
     renderDashboard();
     editMissionFicheModal.classList.add("hidden");
   } else {
@@ -1131,6 +1149,7 @@ async function handleAddReferent() {
 
   const newRef = await createReferent(nom);
   if (newRef) {
+    createHistorique(`Création du référent : "${nom}"`);
     referentsData.push(newRef);
     referentsData.sort((a, b) =>
       a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }),
@@ -1185,6 +1204,7 @@ function openAssignMissionModal(missionId) {
           if (!Array.isArray(mission.Referents_Assignes))
             mission.Referents_Assignes = [];
           mission.Referents_Assignes.push({ Id: refId });
+          createHistorique(`Référent "${ref.nom}" assigné à la mission : "${mission.titre}"`);
         }
       } else {
         const success = await unlinkReferentFromMission(missionId, refId);
@@ -1192,6 +1212,7 @@ function openAssignMissionModal(missionId) {
           mission.Referents_Assignes = mission.Referents_Assignes.filter(
             (r) => r.Id != refId,
           );
+          createHistorique(`Référent "${ref.nom}" retiré de la mission : "${mission.titre}"`);
         }
       }
       renderDashboard(); // Re-render to update badges
@@ -1203,9 +1224,11 @@ function openAssignMissionModal(missionId) {
       const newNom = prompt(`Modifier le nom du référent :`, ref.nom);
       if (newNom && newNom.trim() !== "" && newNom !== ref.nom) {
         progressCounter.innerText = "Mise à jour...";
+        const oldNom = ref.nom;
         const success = await updateReferent(ref.Id, newNom.trim());
         if (success) {
           ref.nom = newNom.trim();
+          createHistorique(`Modification du référent : "${oldNom}" → "${newNom.trim()}"`);
           referentsData.sort((a, b) =>
             a.nom.localeCompare(b.nom, "fr", { sensitivity: "base" }),
           );
@@ -1227,6 +1250,7 @@ function openAssignMissionModal(missionId) {
       progressCounter.innerText = "Suppression...";
       const success = await deleteReferent(ref.Id);
       if (success) {
+        createHistorique(`Suppression du référent : "${ref.nom}"`);
         referentsData = referentsData.filter((r) => r.Id != ref.Id);
         // Clean up assignment if it was assigned to this mission
         if (Array.isArray(mission.Referents_Assignes)) {
