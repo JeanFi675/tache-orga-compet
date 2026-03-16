@@ -27,6 +27,7 @@ const progressCounter = document.getElementById("progress-counter");
 const filterReferent = document.getElementById("filter-referent");
 const filterStatus = document.getElementById("filter-status");
 const filterPhase = document.getElementById("filter-phase");
+const filterPole = document.getElementById("filter-pole");
 
 const modal = document.getElementById("add-task-modal");
 const inputTaskTitle = document.getElementById("new-task-title");
@@ -76,6 +77,10 @@ const missionPhaseSelect = document.getElementById("mission-phase-select");
 const newPhaseInput = document.getElementById("new-phase-input");
 const btnToggleNewPhase = document.getElementById("btn-toggle-new-phase");
 
+const missionPoleSelect = document.getElementById("mission-pole-select");
+const newPoleInput = document.getElementById("new-pole-input");
+const btnToggleNewPole = document.getElementById("btn-toggle-new-pole");
+
 export async function initDashboard() {
   container.innerHTML =
     '<p style="font-size: 1.5rem; font-weight: bold; animation: blink 1s infinite alternate;">Chargement brutal...</p>';
@@ -111,16 +116,16 @@ export async function initDashboard() {
     // 4. Populate Referees & Phase Filters
     populateReferentFilter();
     populatePhaseFilter();
+    populatePoleFilter();
 
     // 5. Render
-    console.log("Debug Missions Data:", missionsData);
-    console.log("Debug Referents Data:", referentsData);
     renderDashboard();
 
     // 5. Attach Filter Events
     filterReferent.addEventListener("change", renderDashboard);
     filterStatus.addEventListener("change", renderDashboard);
     filterPhase.addEventListener("change", renderDashboard);
+    filterPole.addEventListener("change", renderDashboard);
 
     // Initialisation Quill JS
     if (typeof Quill !== "undefined" && !missionFicheQuill) {
@@ -201,6 +206,19 @@ export async function initDashboard() {
       }
     });
 
+    btnToggleNewPole.addEventListener("click", () => {
+      if (newPoleInput.style.display === "none") {
+        newPoleInput.style.display = "block";
+        missionPoleSelect.style.display = "none";
+        btnToggleNewPole.textContent = "-";
+      } else {
+        newPoleInput.style.display = "none";
+        missionPoleSelect.style.display = "block";
+        btnToggleNewPole.textContent = "+";
+        newPoleInput.value = "";
+      }
+    });
+
     btnCloseAssignMission.addEventListener("click", () =>
       assignMissionModal.classList.add("hidden"),
     );
@@ -213,6 +231,9 @@ export async function initDashboard() {
 }
 
 function populateReferentFilter() {
+  // Sauvegarder la sélection actuelle
+  const currentSelection = filterReferent.value;
+
   // Clear current options first (except the first one)
   while (filterReferent.options.length > 1) filterReferent.remove(1);
   while (inputTaskReferentId.options.length > 1) inputTaskReferentId.remove(1);
@@ -228,9 +249,17 @@ function populateReferentFilter() {
     optTask.textContent = ref.nom;
     inputTaskReferentId.appendChild(optTask);
   });
+
+  // Restaurer la sélection
+  if (currentSelection && currentSelection !== "ALL") {
+    filterReferent.value = currentSelection;
+  }
 }
 
 function populatePhaseFilter() {
+  // Sauvegarder la sélection actuelle
+  const currentSelection = filterPhase.value;
+
   // Clear current options first (except default)
   while (filterPhase.options.length > 1) filterPhase.remove(1);
   
@@ -255,6 +284,46 @@ function populatePhaseFilter() {
     optModal.textContent = phase;
     missionPhaseSelect.appendChild(optModal);
   });
+
+  // Restaurer la sélection
+  if (currentSelection && currentSelection !== "ALL") {
+    filterPhase.value = currentSelection;
+  }
+}
+
+function populatePoleFilter() {
+  // Sauvegarder la sélection actuelle
+  const currentSelection = filterPole.value;
+
+  // Clear current options first (except default)
+  while (filterPole.options.length > 1) filterPole.remove(1);
+  
+  // Clear modal select options too (except default)
+  while (missionPoleSelect.options.length > 1) missionPoleSelect.remove(1);
+
+  // Extract unique poles from missionsData
+  const uniquePoles = [
+    ...new Set(missionsData.map((m) => m.pole).filter((p) => p && p.trim() !== "")),
+  ].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+
+  uniquePoles.forEach((pole) => {
+    // Add to dashboard filter
+    const opt = document.createElement("option");
+    opt.value = pole;
+    opt.textContent = pole;
+    filterPole.appendChild(opt);
+
+    // Add to mission modal select
+    const optModal = document.createElement("option");
+    optModal.value = pole;
+    optModal.textContent = pole;
+    missionPoleSelect.appendChild(optModal);
+  });
+
+  // Restaurer la sélection
+  if (currentSelection && currentSelection !== "ALL") {
+    filterPole.value = currentSelection;
+  }
 }
 
 function getTaskAssigneeName(referentIds) {
@@ -300,6 +369,7 @@ function renderDashboard() {
   const selectedRef = filterReferent.value;
   const selectedStatus = filterStatus.value;
   const selectedPhase = filterPhase.value;
+  const selectedPole = filterPole.value;
 
   let totalTasks = 0;
   let completedTasks = 0;
@@ -312,6 +382,11 @@ function renderDashboard() {
       if (mission.phase !== selectedPhase) return;
     }
 
+    // Apply Pole Filter to Mission
+    if (selectedPole !== "ALL") {
+      if (mission.pole !== selectedPole) return;
+    }
+
     // Get tasks for this mission
     const baseTasks = tachesData.filter((t) => t.missions_id === mission.Id);
     let relevantTasks = baseTasks; // Les tâches qui "appartiennent" logiquement à ce référent
@@ -320,23 +395,27 @@ function renderDashboard() {
     let missionMatchesRef = false;
     let isMissionReferent = false;
 
+    // Find "Tout le monde" referent ID for special handling
+    const toutLeMondeRef = referentsData.find((r) => r.nom && r.nom.toLowerCase() === "tout le monde");
+    const toutLeMondeId = toutLeMondeRef ? toutLeMondeRef.Id : null;
+
     if (selectedRef === "ALL") {
       missionMatchesRef = true;
       isMissionReferent = true;
     } else {
       // Check if mission has the referee
       const missionRefs = mission.Referents_Assignes;
-      if (
-        Array.isArray(missionRefs) &&
-        missionRefs.find((r) => r.Id == selectedRef)
-      ) {
+      const hasSelectedRef = Array.isArray(missionRefs) && missionRefs.find((r) => r.Id == selectedRef);
+      const hasToutLeMonde = Array.isArray(missionRefs) && toutLeMondeId && missionRefs.find((r) => r.Id == toutLeMondeId);
+
+      if (hasSelectedRef || hasToutLeMonde) {
         missionMatchesRef = true;
         isMissionReferent = true; // Mène à compter TOUTES les tâches
       }
 
       if (!missionMatchesRef) {
-        // Le référent n'est assigné qu'à des tâches spécifiques, on ne compte que celles-ci
-        relevantTasks = baseTasks.filter((t) => t.referents_id == selectedRef);
+        // Le référent n'est assigné qu'à des tâches spécifiques (ou "Tout le monde"), on ne compte que celles-ci
+        relevantTasks = baseTasks.filter((t) => t.referents_id == selectedRef || (toutLeMondeId && t.referents_id == toutLeMondeId));
         if (relevantTasks.length > 0) {
           missionMatchesRef = true;
         }
@@ -377,6 +456,8 @@ function renderDashboard() {
     // Render Mission Card
     const card = document.createElement("div");
     card.className = "mission-card";
+    card.dataset.missionId = mission.Id;
+    card.id = `mission-card-${mission.Id}`;
 
     // Logic for dynamic background colors
     const isNoReferent = !mission.Referents_Assignes || mission.Referents_Assignes.length === 0;
@@ -457,7 +538,10 @@ function renderDashboard() {
         <div class="mission-top-bar">
           <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
             <h2 class="mission-title" contenteditable="true" spellcheck="false" data-id="${mission.Id}" style="outline: none; margin-bottom: 0;">${mission.titre || "Sans titre"}</h2>
-            ${mission.phase ? `<span class="phase-badge">${mission.phase}</span>` : ""}
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.2rem;">
+              ${mission.phase ? `<span class="phase-badge">${mission.phase}</span>` : ""}
+              ${mission.pole ? `<span class="phase-badge" style="background-color: var(--color-dark); color: var(--color-light);">${mission.pole}</span>` : ""}
+            </div>
           </div>
           <div class="mission-actions">
             <button class="btn-icon mission-archive" data-id="${mission.Id}" title="Archiver la mission">📦</button>
@@ -677,6 +761,7 @@ function renderDashboard() {
         missionsData = missionsData.filter((m) => m.Id != idInt);
         tachesData = tachesData.filter((t) => t.missions_id != idInt);
         populatePhaseFilter();
+        populatePoleFilter();
         renderDashboard();
       } else {
         alert("Erreur");
@@ -701,6 +786,7 @@ function renderDashboard() {
         missionsData = missionsData.filter((m) => m.Id != missionId);
         tachesData = tachesData.filter((t) => t.missions_id != missionId);
         populatePhaseFilter();
+        populatePoleFilter();
         renderDashboard();
       } else {
         alert("Erreur");
@@ -753,7 +839,11 @@ function openEditMissionModal(missionId) {
 
   if (mission.date_debut) {
     const d = new Date(mission.date_debut);
-    inputMissionDate.value = d.toISOString().split("T")[0];
+    // Utiliser l'heure locale pour éviter le décalage UTC
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    inputMissionDate.value = `${year}-${month}-${day}`;
     inputMissionTimeDebut.value = d.toTimeString().slice(0, 5);
   } else {
     inputMissionDate.value = "";
@@ -790,6 +880,13 @@ function openEditMissionModal(missionId) {
   btnToggleNewPhase.textContent = "+";
   newPhaseInput.value = "";
   missionPhaseSelect.value = mission.phase || "";
+
+  // Pole handling
+  newPoleInput.style.display = "none";
+  missionPoleSelect.style.display = "block";
+  btnToggleNewPole.textContent = "+";
+  newPoleInput.value = "";
+  missionPoleSelect.value = mission.pole || "";
 
   inputMissionTitle.focus();
 }
@@ -879,9 +976,10 @@ async function handleCreateMission() {
   let dateDebutISO = null;
   let dateFinISO = null;
 
-  if (devDate && devTimeDebut) {
-    // Créer un objet Date local puis l'envoyer en ISO UTC
-    dateDebutISO = new Date(`${devDate}T${devTimeDebut}:00`).toISOString();
+  if (devDate) {
+    // Utiliser "00:00" par défaut si l'heure n'est pas spécifiée (ex: pour une fiche)
+    const timeDebut = devTimeDebut || "00:00";
+    dateDebutISO = new Date(`${devDate}T${timeDebut}:00`).toISOString();
   }
   if (devDate && devTimeFin) {
     // Créer un objet Date local puis l'envoyer en ISO UTC
@@ -890,12 +988,14 @@ async function handleCreateMission() {
 
   if (isEditing) {
       const phase = newPhaseInput.style.display === "block" ? newPhaseInput.value.trim() : missionPhaseSelect.value;
+      const pole = newPoleInput.style.display === "block" ? newPoleInput.value.trim() : missionPoleSelect.value;
 
       const success = await updateMission(editingMissionId, {
         titre,
         date_debut: dateDebutISO,
         date_fin: dateFinISO,
         phase: phase || null,
+        pole: pole || null,
       });
       if (success) {
         const m = missionsData.find((x) => x.Id == editingMissionId);
@@ -904,8 +1004,10 @@ async function handleCreateMission() {
           m.date_debut = dateDebutISO;
           m.date_fin = dateFinISO;
           m.phase = phase || null;
+          m.pole = pole || null;
         }
         populatePhaseFilter();
+        populatePoleFilter();
         renderDashboard();
         addMissionModal.classList.add("hidden");
     } else {
@@ -913,23 +1015,51 @@ async function handleCreateMission() {
     }
     } else {
       const phase = newPhaseInput.style.display === "block" ? newPhaseInput.value.trim() : missionPhaseSelect.value;
+      const pole = newPoleInput.style.display === "block" ? newPoleInput.value.trim() : missionPoleSelect.value;
       
       const typeRadio = document.querySelector('input[name="mission-type"]:checked');
       const isFiche = typeRadio && typeRadio.value === "fiche";
       const ficheContent = isFiche ? "<p>Ajouter votre texte</p>" : null;
 
-      const newMission = await createMission(titre, dateDebutISO, dateFinISO, phase || null, ficheContent);
+      const newMission = await createMission(titre, dateDebutISO, dateFinISO, phase || null, ficheContent, pole || null);
       if (newMission) {
         newMission.titre = titre;
         newMission.date_debut = dateDebutISO;
         newMission.date_fin = dateFinISO;
         newMission.phase = phase || null;
+        newMission.pole = pole || null;
         newMission.fiche = ficheContent;
         newMission.Referents_Assignes = [];
         missionsData.push(newMission);
+        
+        // On trie pour que la mission prenne sa place chronologique
+        missionsData.sort((a, b) => {
+          const dateA = a.date_debut ? new Date(a.date_debut).getTime() : Infinity;
+          const dateB = b.date_debut ? new Date(b.date_debut).getTime() : Infinity;
+          return dateA - dateB;
+        });
+
         populatePhaseFilter();
+        populatePoleFilter();
         renderDashboard();
         addMissionModal.classList.add("hidden");
+
+        // On scroll vers la nouvelle carte
+        setTimeout(() => {
+          const newCard = document.getElementById(`mission-card-${newMission.Id}`);
+          if (newCard) {
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Animation flash simple
+            newCard.style.transition = 'box-shadow 0.4s ease, transform 0.4s ease';
+            newCard.style.boxShadow = '0 0 0 5px var(--color-dark)';
+            newCard.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+              newCard.style.boxShadow = '';
+              newCard.style.transform = '';
+              setTimeout(() => { newCard.style.transition = ''; }, 400);
+            }, 800);
+          }
+        }, 150);
     } else {
       alert("Erreur réseau");
     }

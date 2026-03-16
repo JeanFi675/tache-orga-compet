@@ -91,6 +91,10 @@
           <option value="ALL">Phase</option>
           <!-- Loaded dynamically -->
         </select>
+        <select id="filter-pole" class="select-brutal">
+          <option value="ALL">Pôle</option>
+          <!-- Loaded dynamically -->
+        </select>
       </div>
 
       <div id="missions-container">
@@ -297,6 +301,38 @@
               class="btn-brutal"
               style="padding: 0 0.5rem"
               title="Ajouter une nouvelle phase"
+            >
+              +
+            </button>
+          </div>
+        </div>
+        <div style="margin-top: 1rem">
+          <label
+            for="mission-pole-select"
+            style="display: block; font-weight: bold; margin-bottom: 0.2rem"
+            >Pôle</label
+          >
+          <div style="display: flex; gap: 0.5rem">
+            <select
+              id="mission-pole-select"
+              class="select-brutal"
+              style="flex: 1"
+            >
+              <option value="">-- Sélectionner ou ajouter --</option>
+              <!-- Loaded dynamically -->
+            </select>
+            <input
+              type="text"
+              id="new-pole-input"
+              class="input-brutal"
+              placeholder="Nouveau pôle..."
+              style="flex: 1; display: none"
+            />
+            <button
+              id="btn-toggle-new-pole"
+              class="btn-brutal"
+              style="padding: 0 0.5rem"
+              title="Ajouter un nouveau pôle"
             >
               +
             </button>
