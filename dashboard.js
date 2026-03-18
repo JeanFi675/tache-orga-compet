@@ -127,6 +127,10 @@ export async function initDashboard() {
     filterPhase.addEventListener("change", renderDashboard);
     filterPole.addEventListener("change", renderDashboard);
 
+    document
+      .getElementById("btn-export-json")
+      .addEventListener("click", handleExportJSON);
+
     // Initialisation Quill JS
     if (typeof Quill !== "undefined" && !missionFicheQuill) {
       missionFicheQuill = new Quill('#quill-editor', {
@@ -1246,4 +1250,68 @@ function openAssignMissionModal(missionId) {
   });
 
   assignMissionModal.classList.remove("hidden");
+}
+
+function stripHtml(html) {
+  if (!html) return null;
+  return new DOMParser().parseFromString(html, "text/html").body.textContent.trim() || null;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  return dateStr.slice(0, 10); // YYYY-MM-DD
+}
+
+function handleExportJSON() {
+  const referentMap = Object.fromEntries(referentsData.map((r) => [r.Id, r.nom]));
+
+  const exportData = {
+    date_export: new Date().toISOString().slice(0, 10),
+    equipe: referentsData.map((r) => r.nom),
+    missions: missionsData.map((m) => {
+      const estFiche = !!m.fiche;
+      const missionTaches = tachesData.filter((t) => t.missions_id === m.Id);
+      const referents = (m.Referents_Assignes || []).map((r) => r.nom);
+
+      const mission = {
+        titre: m.titre,
+        phase: m.phase || null,
+        pole: m.pole || null,
+        date_debut: formatDate(m.date_debut),
+        date_fin: formatDate(m.date_fin),
+        referents: referents.length ? referents : null,
+        type: estFiche ? "fiche" : "taches",
+      };
+
+      if (estFiche) {
+        mission.contenu = stripHtml(m.fiche);
+      } else {
+        mission.taches = missionTaches.map((t) => {
+          const tache = {
+            titre: t.titre,
+            terminee: !!t.est_terminee,
+          };
+          if (t.referents_id && referentMap[t.referents_id]) {
+            tache.referent = referentMap[t.referents_id];
+          }
+          if (t.contenu_fiche) {
+            tache.notes = stripHtml(t.contenu_fiche);
+          }
+          return tache;
+        });
+      }
+
+      return mission;
+    }),
+  };
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `logistique-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
