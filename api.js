@@ -7,6 +7,7 @@ const NOCODB_TOKEN = import.meta.env.VITE_NOCODB_TOKEN;
 const TABLE_MISSIONS = "m4ppq6sdvuq9vfi";
 const TABLE_TACHES = "m5vxp1wj7nwxgg6";
 const TABLE_REFERENTS = "m3tn5yugf5qi196";
+const TABLE_HISTORIQUE = "mo9ms1hst2out76";
 
 const headers = {
   "xc-token": NOCODB_TOKEN,
@@ -382,6 +383,29 @@ export async function deleteReferent(referentId) {
     return false;
   }
 }
+/**
+ * Ajoute une entrée dans la table historique
+ */
+export async function createHistorique(commentaire) {
+  const url = `${NOCODB_URL}/api/v2/tables/${TABLE_HISTORIQUE}/records`;
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const dateStr = `${day}-${month}-${year}`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify([{ Date: dateStr, commentaire }])
+    });
+    if (!res.ok) throw new Error("Erreur lors de la création de l'historique");
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 /**
  * Met à jour le nom d'un référent
  */
