@@ -61,7 +61,8 @@ Missions ───────────────────────�
 ├── titre (string)
 ├── date_debut (datetime ISO UTC)
 ├── date_fin (datetime ISO UTC)
-├── phase (string)
+├── phase (string, optionnel)
+├── pole (string, optionnel — axe organisationnel)
 ├── est_archivee (boolean)
 └── fiche (HTML, optionnel — missions de type "fiche")
        │
@@ -75,6 +76,11 @@ Taches
 ├── missions_id (FK → Missions)
 ├── referents_id (FK → Referents, optionnel)
 └── fiche (markdown, optionnel)
+
+Historique (log d'activité, append-only)
+├── Id (PK)
+├── Date (string format DD-MM-YYYY)
+└── commentaire (string — description de l'action)
 ```
 
 **IDs NocoDB :**
@@ -82,6 +88,7 @@ Taches
 - Table Missions : `m4ppq6sdvuq9vfi`
 - Table Taches : `m5vxp1wj7nwxgg6`
 - Table Referents : `m3tn5yugf5qi196`
+- Table Historique : `mo9ms1hst2out76`
 - Junction Referents↔Missions : `cj4bl5l73xtl2t3`
 
 ## Flux de données
