@@ -684,7 +684,7 @@ function renderDashboard() {
   });
 
   // Editable titles logic
-  document.querySelectorAll('[contenteditable="true"]').forEach((el) => {
+  document.querySelectorAll('.task-title[contenteditable="true"], .mission-title[contenteditable="true"]').forEach((el) => {
     el.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
