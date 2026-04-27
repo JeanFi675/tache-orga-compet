@@ -383,6 +383,8 @@ input[type="date"].select-brutal {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  overflow-y: auto;
+  padding: 1rem;
 }
 
 .brutal-modal-content {
@@ -395,6 +397,8 @@ input[type="date"].select-brutal {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .brutal-modal-content .btn-brutal {

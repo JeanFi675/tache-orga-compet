@@ -45,10 +45,12 @@ const inputMissionTimeDebut = document.getElementById("new-mission-time-debut");
 const inputMissionTimeFin = document.getElementById("new-mission-time-fin");
 const btnSaveMission = document.getElementById("btn-save-mission");
 const btnCancelMission = document.getElementById("btn-cancel-mission");
+const inputMissionAllDay = document.getElementById("new-mission-all-day");
 const missionModalTitle = document.getElementById("mission-modal-title");
 const taskModalTitle = document.getElementById("task-modal-title");
 
 const timeInputsContainer = document.getElementById("time-inputs-container");
+const allDayContainer = document.getElementById("all-day-container");
 const lblMissionDate = document.getElementById("lbl-mission-date");
 
 const ficheModal = document.getElementById("fiche-task-modal");
@@ -168,11 +170,17 @@ export async function initDashboard() {
       inputMissionDate.value = "";
       inputMissionTimeDebut.value = "";
       inputMissionTimeFin.value = "";
+      inputMissionAllDay.checked = false;
+      inputMissionTimeDebut.disabled = false;
+      inputMissionTimeFin.disabled = false;
+      inputMissionTimeDebut.style.opacity = "1";
+      inputMissionTimeFin.style.opacity = "1";
       
       // Reset radio buttons to 'taches'
       const radioTaches = document.querySelector('input[name="mission-type"][value="taches"]');
       if (radioTaches) radioTaches.checked = true;
       timeInputsContainer.style.display = "flex";
+      allDayContainer.style.display = "block";
       lblMissionDate.textContent = "Date";
 
       addMissionModal.classList.remove("hidden");
@@ -183,14 +191,33 @@ export async function initDashboard() {
       radio.addEventListener("change", (e) => {
         if (e.target.value === "fiche") {
           timeInputsContainer.style.display = "none";
+          allDayContainer.style.display = "none";
           lblMissionDate.textContent = "Date d'échéance";
           inputMissionTimeDebut.value = "";
           inputMissionTimeFin.value = "";
+          inputMissionAllDay.checked = false;
         } else {
           timeInputsContainer.style.display = "flex";
+          allDayContainer.style.display = "block";
           lblMissionDate.textContent = "Date";
         }
       });
+    });
+    
+    inputMissionAllDay.addEventListener("change", (e) => {
+      if (e.target.checked) {
+        inputMissionTimeDebut.value = "00:01";
+        inputMissionTimeFin.value = "23:59";
+        inputMissionTimeDebut.disabled = true;
+        inputMissionTimeFin.disabled = true;
+        inputMissionTimeDebut.style.opacity = "0.5";
+        inputMissionTimeFin.style.opacity = "0.5";
+      } else {
+        inputMissionTimeDebut.disabled = false;
+        inputMissionTimeFin.disabled = false;
+        inputMissionTimeDebut.style.opacity = "1";
+        inputMissionTimeFin.style.opacity = "1";
+      }
     });
 
     btnCancelMission.addEventListener("click", () =>
@@ -865,12 +892,26 @@ function openEditMissionModal(missionId) {
     inputMissionDate.value = "";
     inputMissionTimeDebut.value = "";
   }
-
   if (mission.date_fin) {
     const d = new Date(mission.date_fin);
     inputMissionTimeFin.value = d.toTimeString().slice(0, 5);
   } else {
     inputMissionTimeFin.value = "";
+  }
+
+  // Check if it's an "All Day" mission (00:01 to 23:59)
+  if (inputMissionTimeDebut.value === "00:01" && inputMissionTimeFin.value === "23:59") {
+    inputMissionAllDay.checked = true;
+    inputMissionTimeDebut.disabled = true;
+    inputMissionTimeFin.disabled = true;
+    inputMissionTimeDebut.style.opacity = "0.5";
+    inputMissionTimeFin.style.opacity = "0.5";
+  } else {
+    inputMissionAllDay.checked = false;
+    inputMissionTimeDebut.disabled = false;
+    inputMissionTimeFin.disabled = false;
+    inputMissionTimeDebut.style.opacity = "1";
+    inputMissionTimeFin.style.opacity = "1";
   }
 
   // Set radio based on fiche presence and visibility of time container
@@ -881,10 +922,12 @@ function openEditMissionModal(missionId) {
   if (isFiche) {
     if (radioFiche) radioFiche.checked = true;
     timeInputsContainer.style.display = "none";
+    allDayContainer.style.display = "none";
     lblMissionDate.textContent = "Date d'échéance";
   } else {
     if (radioTaches) radioTaches.checked = true;
     timeInputsContainer.style.display = "flex";
+    allDayContainer.style.display = "block";
     lblMissionDate.textContent = "Date";
   }
 
@@ -996,13 +1039,19 @@ async function handleCreateMission() {
   let dateFinISO = null;
 
   if (devDate) {
-    // Utiliser "00:00" par défaut si l'heure n'est pas spécifiée (ex: pour une fiche)
-    const timeDebut = devTimeDebut || "00:00";
+    // Utiliser "00:01" et "23:59" si l'option est cochée
+    let timeDebut = devTimeDebut || "00:00";
+    let timeFin = devTimeFin;
+    
+    if (inputMissionAllDay.checked) {
+      timeDebut = "00:01";
+      timeFin = "23:59";
+    }
+
     dateDebutISO = new Date(`${devDate}T${timeDebut}:00`).toISOString();
-  }
-  if (devDate && devTimeFin) {
-    // Créer un objet Date local puis l'envoyer en ISO UTC
-    dateFinISO = new Date(`${devDate}T${devTimeFin}:00`).toISOString();
+    if (timeFin) {
+      dateFinISO = new Date(`${devDate}T${timeFin}:00`).toISOString();
+    }
   }
 
   if (isEditing) {
