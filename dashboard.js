@@ -493,9 +493,10 @@ function renderDashboard() {
 
     // Logic for dynamic background colors
     const isNoReferent = !mission.Referents_Assignes || mission.Referents_Assignes.length === 0;
+    const allTasksAssigned = baseTasks.length > 0 && baseTasks.every(t => t.referents_id);
     const isAllCompleted = baseTasks.length > 0 && baseTasks.every(t => t.est_terminee);
 
-    if (isNoReferent) {
+    if (isNoReferent && !allTasksAssigned) {
       card.classList.add("mission-no-referent");
     } else if (isAllCompleted) {
       card.classList.add("mission-all-completed");
